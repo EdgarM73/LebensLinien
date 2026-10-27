@@ -1,5 +1,7 @@
 # Lebenslinien
 
+**Deutsch** · [English](README.en.md)
+
 Erzeugt aus einer Person in **Gramps Web** ein Hochformat-Video (1080×1920): Jede Person aus der
 engeren Familie ist ein leuchtender Faden. Neue Menschen schwingen in dein Leben (Geburt, Hochzeit),
 Verstorbene steigen als Sterne auf, am Ende verbindet sich alles zu einem Sternbild.

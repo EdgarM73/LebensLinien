@@ -1,5 +1,7 @@
 # Lebenslinien – Anleitung
 
+**Deutsch** · [English](GUIDE.en.md)
+
 Lebenslinien erstellt aus einer Person in **Gramps Web** ein Hochformat-Video (1080×1920): Familie, Freunde und Kollegen
 sind leuchtende Lebenslinien, Verstorbene steigen als Sterne auf, am Ende entsteht ein Sternbild.
 
@@ -13,7 +15,7 @@ Diese Anleitung beschreibt die Web-Oberfläche. Es gibt zwei Wege, sie zu betrei
 | Installiert wird | nur Docker | Node.js und ffmpeg |
 | Schriftart im Video | DejaVu (im Container enthalten) | Georgia / Segoe UI unter Windows |
 
-Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommandozeile, siehe [README.md](README.md).
+Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommandozeile, siehe [README.md](README.md) (English: [README.en.md](README.en.md)).
 
 ---
 
