@@ -3,6 +3,7 @@
 config_*.json
 config.json
 data/
+node_modules/
 .env
 komodo.env
 .env
