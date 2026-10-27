@@ -1,0 +1,9 @@
+*.mp4
+*.mp3
+config_*.json
+config.json
+data/
+.env
+komodo.env
+.env
+komodo.env

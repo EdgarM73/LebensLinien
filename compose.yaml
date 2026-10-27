@@ -1,0 +1,24 @@
+# lebenslinien (Repo erdal/LiveHistory)
+# Produktiv: Komodo-Stack "lebenslinien" auf pinky. Die Werte kommen aus dem
+# Stack-Environment in Komodo (komodo.env); dort ist BIND_ADDR=172.23.0.7 gesetzt.
+# Lokal: .env nach .env.example anlegen – ohne BIND_ADDR bleibt die App auf 127.0.0.1.
+services:
+  lebenslinien:
+    build: .
+    image: lebenslinien:latest
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      APP_DATA_DIR: /data
+      APP_REGISTRATION_KEY: ${APP_REGISTRATION_KEY:?Set APP_REGISTRATION_KEY in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      APP_ALLOWED_GRAMPS_HOSTS: ${APP_ALLOWED_GRAMPS_HOSTS:-}
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${PORT:-3000}:3000"
+    volumes:
+      - lebenslinien_data:/data
+
+volumes:
+  lebenslinien_data:
+    name: lebenslinien_lebenslinien_data

@@ -1,0 +1,34 @@
+{
+  "url": "https://gramps.example.com",
+  "username": "dein-benutzer",
+  "password": "oder per Umgebungsvariable GRAMPS_PASSWORD setzen",
+  "person": "I0044",
+  "lang": "de",
+  "texts": {
+    "title": "Das Leben ist eine Reise",
+    "lines": [
+      "Manche gehen ein Stück mit dir…",
+      "Andere bleiben für immer an deinem Himmel…"
+    ]
+  },
+  "extras": [
+    {
+      "name": "Peter",
+      "rel": "Freund",
+      "start": 1975,
+      "end": null
+    },
+    {
+      "name": "Birgit",
+      "rel": "Kollegin",
+      "start": "1988-03",
+      "end": 2012,
+      "exit": "drift"
+    },
+    {
+      "id": "I0123",
+      "rel": "Freund",
+      "start": 1995
+    }
+  ]
+}

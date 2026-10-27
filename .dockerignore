@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+config*.json
+komodo.env
+data
+node_modules
+npm-debug.log
+test
+test-stammbaum-huber.ged
+*.mp3
+*.mp4

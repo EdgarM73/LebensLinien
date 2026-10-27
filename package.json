@@ -1,0 +1,9 @@
+{
+  "name": "lebenslinien",
+  "version": "1.0.0",
+  "description": "Erzeugt aus einer Person in Gramps Web ein Lebenslinien-Video (Sternenhimmel-Animation)",
+  "type": "module",
+  "bin": { "lebenslinien": "src/index.js" },
+  "scripts": { "demo": "node src/index.js --demo --out demo.mp4", "web": "node server.js", "test": "node --test" },
+  "dependencies": { "@napi-rs/canvas": "^0.1.65" }
+}

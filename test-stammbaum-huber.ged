@@ -1,0 +1,516 @@
+0 HEAD
+1 SOUR TESTDATEN
+2 NAME Test-Stammbaum Huber
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+1 LANG German
+1 DATE 26 OCT 2026
+0 @I1@ INDI
+1 NAME Johann /Huber/
+2 GIVN Johann
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 12 MAR 1884
+2 PLAC Landshut, Bayern, Deutschland
+1 DEAT
+2 DATE 2 NOV 1951
+2 PLAC Landshut, Bayern, Deutschland
+1 OCCU Schreinermeister
+1 FAMS @F1@
+0 @I2@ INDI
+1 NAME Maria /Wagner/
+2 GIVN Maria
+2 SURN Wagner
+1 SEX F
+1 BIRT
+2 DATE 4 AUG 1887
+2 PLAC Moosburg an der Isar, Bayern, Deutschland
+1 DEAT
+2 DATE 19 JAN 1962
+2 PLAC Landshut, Bayern, Deutschland
+1 OCCU Hausfrau
+1 FAMS @F1@
+0 @I3@ INDI
+1 NAME Friedrich /Keller/
+2 GIVN Friedrich
+2 SURN Keller
+1 SEX M
+1 BIRT
+2 DATE 27 JAN 1889
+2 PLAC Augsburg, Bayern, Deutschland
+1 DEAT
+2 DATE 15 JUL 1944
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Weber
+1 FAMS @F2@
+0 @I4@ INDI
+1 NAME Anna /Brandl/
+2 GIVN Anna
+2 SURN Brandl
+1 SEX F
+1 BIRT
+2 DATE 9 OCT 1892
+2 PLAC Friedberg, Bayern, Deutschland
+1 DEAT
+2 DATE 3 MAR 1975
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Näherin
+1 FAMS @F2@
+0 @I5@ INDI
+1 NAME Georg /Lindner/
+2 GIVN Georg
+2 SURN Lindner
+1 SEX M
+1 BIRT
+2 DATE 30 JUN 1895
+2 PLAC Regensburg, Bayern, Deutschland
+1 DEAT
+2 DATE 12 SEP 1968
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Lokführer
+1 FAMS @F3@
+0 @I6@ INDI
+1 NAME Theresia /Maier/
+2 GIVN Theresia
+2 SURN Maier
+1 SEX F
+1 BIRT
+2 DATE 14 FEB 1898
+2 PLAC Kelheim, Bayern, Deutschland
+1 DEAT
+2 DATE 24 DEC 1980
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Hausfrau
+1 FAMS @F3@
+0 @I7@ INDI
+1 NAME Karl /Vogt/
+2 GIVN Karl
+2 SURN Vogt
+1 SEX M
+1 BIRT
+2 DATE 5 NOV 1901
+2 PLAC Nürnberg, Bayern, Deutschland
+1 DEAT
+2 DATE 8 APR 1977
+2 PLAC Nürnberg, Bayern, Deutschland
+1 OCCU Buchdrucker
+1 FAMS @F4@
+0 @I8@ INDI
+1 NAME Elisabeth /Roth/
+2 GIVN Elisabeth
+2 SURN Roth
+1 SEX F
+1 BIRT
+2 DATE 21 MAR 1904
+2 PLAC Fürth, Bayern, Deutschland
+1 DEAT
+2 DATE 30 JUL 1991
+2 PLAC Nürnberg, Bayern, Deutschland
+1 OCCU Verkäuferin
+1 FAMS @F4@
+0 @I9@ INDI
+1 NAME Josef /Huber/
+2 GIVN Josef
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 18 FEB 1909
+2 PLAC Landshut, Bayern, Deutschland
+1 DEAT
+2 DATE 27 MAY 1982
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Schreiner
+1 FAMS @F5@
+1 FAMC @F1@
+0 @I10@ INDI
+1 NAME Franziska /Huber/
+2 GIVN Franziska
+2 SURN Huber
+1 SEX F
+1 BIRT
+2 DATE 7 JUL 1912
+2 PLAC Landshut, Bayern, Deutschland
+1 DEAT
+2 DATE 11 OCT 1999
+2 PLAC Landshut, Bayern, Deutschland
+1 OCCU Lehrerin
+1 FAMC @F1@
+0 @I11@ INDI
+1 NAME Ludwig /Huber/
+2 GIVN Ludwig
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 1 DEC 1915
+2 PLAC Landshut, Bayern, Deutschland
+1 DEAT
+2 DATE 2 FEB 1943
+2 PLAC Russland
+1 OCCU Kaufmann
+1 FAMC @F1@
+0 @I12@ INDI
+1 NAME Hedwig /Keller/
+2 GIVN Hedwig
+2 SURN Keller
+1 SEX F
+1 BIRT
+2 DATE 23 SEP 1914
+2 PLAC Augsburg, Bayern, Deutschland
+1 DEAT
+2 DATE 5 JUN 2001
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Schneiderin
+1 FAMS @F5@
+1 FAMC @F2@
+0 @I13@ INDI
+1 NAME Otto /Keller/
+2 GIVN Otto
+2 SURN Keller
+1 SEX M
+1 BIRT
+2 DATE 15 MAR 1917
+2 PLAC Augsburg, Bayern, Deutschland
+1 DEAT
+2 DATE 20 NOV 1990
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Mechaniker
+1 FAMC @F2@
+0 @I14@ INDI
+1 NAME Walter /Lindner/
+2 GIVN Walter
+2 SURN Lindner
+1 SEX M
+1 BIRT
+2 DATE 2 APR 1922
+2 PLAC Regensburg, Bayern, Deutschland
+1 DEAT
+2 DATE 17 AUG 2004
+2 PLAC Nürnberg, Bayern, Deutschland
+1 OCCU Elektriker
+1 FAMS @F6@
+1 FAMC @F3@
+0 @I15@ INDI
+1 NAME Gertrud /Lindner/
+2 GIVN Gertrud
+2 SURN Lindner
+1 SEX F
+1 BIRT
+2 DATE 30 JAN 1925
+2 PLAC Regensburg, Bayern, Deutschland
+1 DEAT
+2 DATE 9 MAR 2015
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Krankenschwester
+1 FAMC @F3@
+0 @I16@ INDI
+1 NAME Ingrid /Vogt/
+2 GIVN Ingrid
+2 SURN Vogt
+1 SEX F
+1 BIRT
+2 DATE 11 JUN 1928
+2 PLAC Nürnberg, Bayern, Deutschland
+1 DEAT
+2 DATE 26 FEB 2019
+2 PLAC Nürnberg, Bayern, Deutschland
+1 OCCU Bürokauffrau
+1 FAMS @F6@
+1 FAMC @F4@
+0 @I17@ INDI
+1 NAME Hans /Vogt/
+2 GIVN Hans
+2 SURN Vogt
+1 SEX M
+1 BIRT
+2 DATE 19 OCT 1931
+2 PLAC Nürnberg, Bayern, Deutschland
+1 DEAT
+2 DATE 3 DEC 2008
+2 PLAC Erlangen, Bayern, Deutschland
+1 OCCU Ingenieur
+1 FAMC @F4@
+0 @I18@ INDI
+1 NAME Rudolf /Huber/
+2 GIVN Rudolf
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 14 MAY 1938
+2 PLAC Augsburg, Bayern, Deutschland
+1 DEAT
+2 DATE 1 SEP 2016
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Bankkaufmann
+1 FAMS @F7@
+1 FAMC @F5@
+0 @I19@ INDI
+1 NAME Margarete /Huber/
+2 GIVN Margarete
+2 SURN Huber
+1 SEX F
+1 BIRT
+2 DATE 28 NOV 1941
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Apothekerin
+1 FAMC @F5@
+0 @I20@ INDI
+1 NAME Peter /Huber/
+2 GIVN Peter
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 3 MAR 1947
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Polizeibeamter
+1 FAMS @F8@
+1 FAMC @F5@
+0 @I21@ INDI
+1 NAME Renate /Lindner/
+2 GIVN Renate
+2 SURN Lindner
+1 SEX F
+1 BIRT
+2 DATE 9 AUG 1951
+2 PLAC Nürnberg, Bayern, Deutschland
+1 OCCU Grundschullehrerin
+1 FAMS @F7@
+1 FAMC @F6@
+0 @I22@ INDI
+1 NAME Klaus /Lindner/
+2 GIVN Klaus
+2 SURN Lindner
+1 SEX M
+1 BIRT
+2 DATE 22 FEB 1954
+2 PLAC Nürnberg, Bayern, Deutschland
+1 DEAT
+2 DATE 10 APR 2020
+2 PLAC Nürnberg, Bayern, Deutschland
+1 OCCU Architekt
+1 FAMC @F6@
+0 @I23@ INDI
+1 NAME Sabine /Frank/
+2 GIVN Sabine
+2 SURN Frank
+1 SEX F
+1 BIRT
+2 DATE 5 DEC 1950
+2 PLAC Ingolstadt, Bayern, Deutschland
+1 OCCU Arzthelferin
+1 FAMS @F8@
+0 @I24@ INDI
+1 NAME Thomas /Huber/
+2 GIVN Thomas
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 15 JAN 1974
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Softwareentwickler
+1 FAMS @F9@
+1 FAMC @F7@
+0 @I25@ INDI
+1 NAME Andrea /Huber/
+2 GIVN Andrea
+2 SURN Huber
+1 SEX F
+1 BIRT
+2 DATE 30 SEP 1977
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Tierärztin
+1 FAMS @F10@
+1 FAMC @F7@
+0 @I26@ INDI
+1 NAME Stefan /Huber/
+2 GIVN Stefan
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 8 MAY 1981
+2 PLAC Regensburg, Bayern, Deutschland
+1 OCCU Koch
+1 FAMC @F7@
+0 @I27@ INDI
+1 NAME Michael /Huber/
+2 GIVN Michael
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 12 APR 1978
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Elektroniker
+1 FAMS @F11@
+1 FAMC @F8@
+0 @I28@ INDI
+1 NAME Julia /Schmid/
+2 GIVN Julia
+2 SURN Schmid
+1 SEX F
+1 BIRT
+2 DATE 3 OCT 1976
+2 PLAC München, Bayern, Deutschland
+1 OCCU Architektin
+1 FAMS @F9@
+0 @I29@ INDI
+1 NAME Markus /Berger/
+2 GIVN Markus
+2 SURN Berger
+1 SEX M
+1 BIRT
+2 DATE 17 FEB 1975
+2 PLAC Freising, Bayern, Deutschland
+1 OCCU Steuerberater
+1 FAMS @F10@
+0 @I30@ INDI
+1 NAME Lukas /Huber/
+2 GIVN Lukas
+2 SURN Huber
+1 SEX M
+1 BIRT
+2 DATE 25 MAR 2003
+2 PLAC München, Bayern, Deutschland
+1 OCCU Student
+1 FAMC @F9@
+0 @I31@ INDI
+1 NAME Lena /Huber/
+2 GIVN Lena
+2 SURN Huber
+1 SEX F
+1 BIRT
+2 DATE 14 NOV 2006
+2 PLAC München, Bayern, Deutschland
+1 OCCU Auszubildende
+1 FAMC @F9@
+0 @I32@ INDI
+1 NAME Sophie /Berger/
+2 GIVN Sophie
+2 SURN Berger
+1 SEX F
+1 BIRT
+2 DATE 2 JUN 2005
+2 PLAC Freising, Bayern, Deutschland
+1 OCCU Studentin
+1 FAMC @F10@
+0 @I33@ INDI
+1 NAME Felix /Berger/
+2 GIVN Felix
+2 SURN Berger
+1 SEX M
+1 BIRT
+2 DATE 27 JAN 2009
+2 PLAC Freising, Bayern, Deutschland
+1 OCCU Schüler
+1 FAMC @F10@
+0 @I34@ INDI
+1 NAME Katrin /Weber/
+2 GIVN Katrin
+2 SURN Weber
+1 SEX F
+1 BIRT
+2 DATE 11 MAR 1982
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Physiotherapeutin
+1 FAMS @F11@
+0 @I35@ INDI
+1 NAME Emma /Huber/
+2 GIVN Emma
+2 SURN Huber
+1 SEX F
+1 BIRT
+2 DATE 19 AUG 2012
+2 PLAC Augsburg, Bayern, Deutschland
+1 OCCU Schülerin
+1 FAMC @F11@
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 MARR
+2 DATE 20 MAY 1907
+2 PLAC Landshut, Bayern, Deutschland
+1 CHIL @I9@
+1 CHIL @I10@
+1 CHIL @I11@
+0 @F2@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 MARR
+2 DATE 26 APR 1913
+2 PLAC Augsburg, Bayern, Deutschland
+1 CHIL @I12@
+1 CHIL @I13@
+0 @F3@ FAM
+1 HUSB @I5@
+1 WIFE @I6@
+1 MARR
+2 DATE 12 JUN 1920
+2 PLAC Regensburg, Bayern, Deutschland
+1 CHIL @I14@
+1 CHIL @I15@
+0 @F4@ FAM
+1 HUSB @I7@
+1 WIFE @I8@
+1 MARR
+2 DATE 4 SEP 1926
+2 PLAC Nürnberg, Bayern, Deutschland
+1 CHIL @I16@
+1 CHIL @I17@
+0 @F5@ FAM
+1 HUSB @I9@
+1 WIFE @I12@
+1 MARR
+2 DATE 10 OCT 1936
+2 PLAC Augsburg, Bayern, Deutschland
+1 CHIL @I18@
+1 CHIL @I19@
+1 CHIL @I20@
+0 @F6@ FAM
+1 HUSB @I14@
+1 WIFE @I16@
+1 MARR
+2 DATE 27 MAY 1950
+2 PLAC Nürnberg, Bayern, Deutschland
+1 CHIL @I21@
+1 CHIL @I22@
+0 @F7@ FAM
+1 HUSB @I18@
+1 WIFE @I21@
+1 MARR
+2 DATE 17 JUN 1972
+2 PLAC Regensburg, Bayern, Deutschland
+1 CHIL @I24@
+1 CHIL @I25@
+1 CHIL @I26@
+0 @F8@ FAM
+1 HUSB @I20@
+1 WIFE @I23@
+1 MARR
+2 DATE 23 AUG 1975
+2 PLAC Augsburg, Bayern, Deutschland
+1 CHIL @I27@
+0 @F9@ FAM
+1 HUSB @I24@
+1 WIFE @I28@
+1 MARR
+2 DATE 21 JUL 2001
+2 PLAC München, Bayern, Deutschland
+1 CHIL @I30@
+1 CHIL @I31@
+0 @F10@ FAM
+1 HUSB @I29@
+1 WIFE @I25@
+1 MARR
+2 DATE 13 SEP 2003
+2 PLAC Freising, Bayern, Deutschland
+1 CHIL @I32@
+1 CHIL @I33@
+0 @F11@ FAM
+1 HUSB @I27@
+1 WIFE @I34@
+1 MARR
+2 DATE 22 MAY 2010
+2 PLAC Augsburg, Bayern, Deutschland
+1 CHIL @I35@
+0 TRLR

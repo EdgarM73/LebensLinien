@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172d26">
+  <title>Lebenslinien | Gramps-Video</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Lebenslinien Startseite"><span class="brand-mark" aria-hidden="true">L</span><span>lebenslinien</span></a>
+    <div class="account-area" id="account-area" hidden><span class="user-label" id="user-label"></span><button class="button button-quiet" id="logout-button" type="button">Abmelden</button></div>
+  </header>
+
+  <main>
+    <section class="auth-view" id="auth-view" hidden>
+      <div class="auth-copy">
+        <p class="eyebrow">Gramps Web · persönliche Geschichten</p>
+        <h1>Ein Leben.<br><em>Viele Verbindungen.</em></h1>
+        <p class="intro">Verbinde deinen Stammbaum und gestalte daraus ein persönliches Lebenslinien-Video.</p>
+        <div class="auth-rule" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="auth-form-wrap">
+        <div class="mode-tabs" role="tablist" aria-label="Konto"><button class="mode-tab active" id="login-tab" type="button" role="tab" aria-selected="true">Anmelden</button><button class="mode-tab" id="register-tab" type="button" role="tab" aria-selected="false">Konto erstellen</button></div>
+        <form id="auth-form">
+          <label>Benutzername<input name="username" autocomplete="username" required minlength="3" maxlength="40"></label>
+          <label>Passwort<input name="password" type="password" autocomplete="current-password" required minlength="1" maxlength="256"></label>
+          <label id="invite-field" hidden>Einladungscode<input name="invite" autocomplete="off"></label>
+          <p class="form-error" id="auth-error" role="alert" hidden></p>
+          <button class="button button-primary auth-submit" id="auth-submit" type="submit">Anmelden <span aria-hidden="true">↗</span></button>
+        </form>
+        <p class="form-note" id="auth-note">Deine Verbindungsdaten bleiben verschlüsselt auf diesem Server.</p>
+      </div>
+    </section>
+
+    <section class="workspace" id="workspace" hidden>
+      <div class="page-heading">
+        <div><p class="eyebrow">Dein Studio</p><h1>Video einrichten</h1></div>
+        <div class="status-pill"><span class="status-dot"></span><span id="connection-status">Noch nicht eingerichtet</span></div>
+      </div>
+      <div class="workspace-grid">
+        <form class="setup-form" id="config-form">
+          <section class="form-section">
+            <div class="section-heading"><span class="step-number">01</span><div><h2>Gramps-Verbindung</h2><p>Deine Zugangsdaten werden verschlüsselt gespeichert.</p></div></div>
+            <div class="field-grid">
+              <label class="field-wide">Server-URL<input name="url" type="url" placeholder="https://gramps.example.org" required></label>
+              <label>Benutzername<input name="username" autocomplete="username" required></label>
+              <label>Passwort<input name="password" type="password" autocomplete="new-password" placeholder="Passwort eingeben"><small id="password-hint">Wird verschlüsselt gespeichert.</small></label>
+              <label class="field-wide">Hauptperson<input name="person" placeholder="Gramps-ID oder Name" required><small>Eine Gramps-ID ist eindeutig, z. B. I0044.</small></label>
+              <label>Sprache<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
+              <div class="field-wide audio-upload"><label for="audio-input">Hintergrundmusik</label><div class="audio-control"><input id="audio-input" type="file" accept=".mp3,.wav,.m4a,.mp4,.aac,.ogg,.flac,audio/*"><button class="button-audio-remove" id="audio-remove" type="button" hidden>Entfernen</button></div><small id="audio-status" role="status">Optional · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB</small></div>
+            </div>
+          </section>
+
+          <section class="form-section extras-section">
+            <div class="section-heading"><span class="step-number">02</span><div><h2>Weitere Menschen</h2><p>Freunde, Kolleginnen und andere wichtige Wegbegleiter. Mit Enddatum: wegdriften oder als Stern aufsteigen.</p></div></div>
+            <div class="extras-head" aria-hidden="true"><span>Name oder ID</span><span>Beziehung</span><span>Beginn</span><span>Ende</span><span>Austritt</span><span></span></div>
+            <div id="extras-list" class="extras-list"></div>
+            <button class="button button-add" id="add-extra" type="button"><span aria-hidden="true">＋</span> Person hinzufügen</button>
+          </section>
+
+          <section class="form-section ending-section">
+            <div class="section-heading"><span class="step-number">03</span><div><h2>Schlusstext</h2><p>Vorschläge richten sich nach der gewählten Videosprache.</p></div></div>
+            <div class="ending-fields">
+              <label>Titel<input id="ending-title" name="endingTitle" maxlength="120" placeholder="Das Leben ist eine Reise"></label>
+              <label>Zeile 1<textarea id="ending-line-1" name="endingLine1" maxlength="180" rows="2"></textarea></label>
+              <label>Zeile 2<textarea id="ending-line-2" name="endingLine2" maxlength="180" rows="2"></textarea></label>
+            </div>
+          </section>
+
+          <div class="form-actions"><p class="form-error" id="config-error" role="alert" hidden></p><p class="success-message" id="save-message" role="status" hidden>Änderungen gespeichert.</p><button class="button button-secondary" type="submit" id="save-button">Einstellungen speichern</button></div>
+        </form>
+
+        <aside class="render-panel">
+          <div class="render-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="orbit orbit-three"></span><span class="orbit-core"></span><span class="orbit-star star-a"></span><span class="orbit-star star-b"></span><span class="orbit-star star-c"></span></div>
+          <p class="eyebrow">Bereit, wenn du es bist</p><h2>Deine Geschichte<br>in Bewegung.</h2>
+          <p class="render-copy">Die Lebenslinien entstehen aus den Daten deiner Hauptperson und den hinzugefügten Wegbegleitern.</p>
+          <button class="button button-primary render-button" id="generate-button" type="button" disabled>Video erstellen <span aria-hidden="true">↗</span></button>
+          <p class="render-message" id="render-message" role="status" aria-live="polite"></p>
+          <a class="button button-download" id="download-link" href="/api/video" hidden>Video herunterladen <span aria-hidden="true">↓</span></a>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
