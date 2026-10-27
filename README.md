@@ -4,6 +4,8 @@ Erzeugt aus einer Person in **Gramps Web** ein Hochformat-Video (1080×1920): Je
 engeren Familie ist ein leuchtender Faden. Neue Menschen schwingen in dein Leben (Geburt, Hochzeit),
 Verstorbene steigen als Sterne auf, am Ende verbindet sich alles zu einem Sternbild.
 
+**Betrieb als Webserver oder Container:** siehe [ANLEITUNG.md](ANLEITUNG.md) (Voraussetzungen, Docker, lokaler Start, Fehlerhilfe).
+
 ## Voraussetzungen
 Node.js ≥ 18 und `ffmpeg` im PATH. Einmalig `npm install`.
 
@@ -67,7 +69,7 @@ Voraussetzung ist Docker mit Docker Compose. Im Projektordner eine `.env` aus de
 
 Unter Windows PowerShell kann die Vorlage so kopiert werden: `Copy-Item .env.example .env`. Anschließend ist die Anwendung unter `http://localhost:3000` erreichbar. Der Container bindet den Port standardmäßig nur an den lokalen Rechner; für externen Zugriff einen HTTPS-Reverse-Proxy verwenden und in `.env` `COOKIE_SECURE=true` setzen. Bei Bedarf lässt sich der lokale Port über `PORT` ändern.
 
-Benutzer, Videos, Musik und der Verschlüsselungsschlüssel liegen im persistenten Docker-Volume `lebenslinien_data`. `docker compose down` erhält diese Daten; `docker compose down -v` löscht das Volume unwiderruflich. Für Backups das Volume sichern.
+Benutzer, Videos, Musik und der Verschlüsselungsschlüssel liegen im persistenten Docker-Volume `lebenslinien_lebenslinien_data`. `docker compose down` erhält diese Daten; `docker compose down -v` löscht das Volume unwiderruflich. Für Backups das Volume sichern.
 
 ## Was dargestellt wird
 Großeltern, Eltern, Geschwister (auch Halbgeschwister), Partner (bei Scheidung driftet die Linie weg),
