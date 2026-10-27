@@ -4,6 +4,7 @@ import { typeName, familyRelName } from './gramps.js';
 
 // Die Bezeichnungen werden hier nur als Schlüssel ("father" …) abgelegt; übersetzt wird erst in i18n.js (localize).
 const KEYS = new Proxy({}, { get: (_, k) => k });
+export const LEAD = 2;   // Die Zeitleiste beginnt so viele Jahre vor der Geburt der Hauptperson
 const g3 = (gender, m, f, n) => (gender === 1 || gender === 'M' ? m : gender === 0 || gender === 'F' ? f : n);
 const genderOf = (p) => { const g = p.gender; return typeof g === 'object' ? g?.value : g; };
 
@@ -38,12 +39,12 @@ export function makeExtra(e, i, { bP, endT, today, name = null, death = null, wa
   if (start == null) { warnings.push(`${label}: "start" fehlt (Jahr, ab dem die Person im Leben vorkommt) – übersprungen`); return null; }
   let end = parseYear(e.end), exit = e.exit || 'drift';
   if (end == null && death != null) { end = death; exit = 'star'; }
-  if (end != null && end <= bP) return null;
+  if (end != null && end <= bP - LEAD) return null;
   if (start > endT) return null;
   if (end != null && end > endT) end = null;
   return {
     id: `extra:${e.id || e.name || i}`, name: label, full: name?.full || e.name || label, rel: e.rel, relKey: e.rel ? undefined : 'friend', group: 6,
-    gender: null, start: Math.max(start, bP), end, exit: end == null ? null : exit, initial: start <= bP,
+    gender: null, start: Math.max(start, bP - LEAD), end, exit: end == null ? null : exit, initial: start <= bP - LEAD,
   };
 }
 
@@ -84,7 +85,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
 
   const members = new Map();
   const warnings = [];
-  const add = (handle, group, rel, startRaw, { endOverride, exit, needStart } = {}) => {
+  const add = (handle, group, rel, startRaw, { endOverride, exit, needStart, side } = {}) => {
     if (members.has(handle) || handle === rootHandle || !people.has(handle)) return;
     const birth = birthOf(handle);
     const death = deathOf(handle);
@@ -92,23 +93,31 @@ export function buildModel(tree, rootHandle, opts = {}) {
     const nm = nameOf(handle);
     if (needStart && startRaw == null) { warnings.push(`${nm.full}: Ehepartner ohne Heirats-/Kinddatum übersprungen`); return; }   // sonst würde die Linie bei der Geburt beginnen
     if (start == null) { warnings.push(`${nm.full}: ohne Datum übersprungen`); return; }
-    if (group <= 2 && birth != null && birth <= bP) start = bP; // war schon da, als die Hauptperson geboren wurde
-    if (group <= 1 && birth == null) start = bP; // Eltern/Großeltern ohne Geburtsdatum
+    if (group <= 2 && birth != null && birth <= bP - LEAD) start = bP - LEAD; // war schon da, als die Zeitleiste beginnt
+    if (group <= 1 && birth == null) start = bP - LEAD; // Eltern/Großeltern ohne Geburtsdatum
     let end = endOverride ?? death;
     let ex = exit || 'star';
     if (end == null && birth != null && today - birth > 100) { end = birth + 78; warnings.push(`${nm.full}: kein Sterbedatum, nehme ${Math.round(end)} an`); }
-    if (end != null && end <= bP) return;           // starb vor der Geburt der Hauptperson
+    if (end != null && end <= bP - LEAD) return;   // starb vor Beginn der Zeitleiste
     if (start > endT) return;                       // kam erst nach Ende hinzu
     if (end != null && end > endT) end = null;      // bleibt bis zum Schluss
-    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP), end, exit: end == null ? null : ex, initial: start <= bP, birth: startRaw == null && birth != null && start > bP });   // birth: Linie entsteht mit der Geburt
+    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP - LEAD), end, exit: end == null ? null : ex, initial: start <= bP - LEAD, birth: startRaw == null && birth != null && start > bP - LEAD, side });   // birth: Linie entsteht mit der Geburt
   };
 
+  // Seiten (-1 links, +1 rechts): Vater links, Mutter rechts; Großeltern auf der Seite ihres Kindes;
+  // Geschwister, Partner, Kinder usw. wechseln sich ab, damit beide Seiten gleichmäßig gefüllt sind.
   const parents = parentsOf(rootHandle);
-  for (const ph of parents) for (const gh of parentsOf(ph)) add(gh, 0, g3(genderOf(people.get(gh)), lang.grandfather, lang.grandmother, lang.grandfather), null);
-  for (const ph of parents) add(ph, 1, g3(genderOf(people.get(ph)), lang.father, lang.mother, lang.father), null);
+  let unknownParents = 0;
+  const parentSide = new Map(parents.map((ph) => { const g = genderOf(people.get(ph)); return [ph, g === 1 ? -1 : g === 0 ? 1 : (unknownParents++ % 2 ? 1 : -1)]; }));
+  for (const ph of parents) for (const gh of parentsOf(ph)) add(gh, 0, g3(genderOf(people.get(gh)), lang.grandfather, lang.grandmother, lang.grandfather), null, { side: parentSide.get(ph) });
+  for (const ph of parents) add(ph, 1, g3(genderOf(people.get(ph)), lang.father, lang.mother, lang.father), null, { side: parentSide.get(ph) });
+  let sibN = 0, spouseN = 0, kidN = 0;
   for (const fh of root.parent_family_list || []) {
-    for (const r of families.get(fh)?.child_ref_list || [])
-      add(r.ref, 2, g3(genderOf(people.get(r.ref)), lang.brother, lang.sister, lang.sibling), null);
+    for (const r of families.get(fh)?.child_ref_list || []) {
+      const side = sibN % 2 ? 1 : -1;
+      add(r.ref, 2, g3(genderOf(people.get(r.ref)), lang.brother, lang.sister, lang.sibling), null, { side });
+      if (members.get(r.ref)?.side === side) sibN++;
+    }
   }
   for (const fh of root.family_list || []) {
     const f = families.get(fh);
@@ -119,11 +128,19 @@ export function buildModel(tree, rootHandle, opts = {}) {
     const kidBirths = (f.child_ref_list || []).map((r) => birthOf(r.ref)).filter((y) => y != null);
     const start = married ?? (kidBirths.length ? Math.min(...kidBirths) - 1 : null);
     const rel = familyRelName(f.type) === 'Married' ? g3(genderOf(people.get(sh)), lang.husband, lang.wife, lang.partner) : lang.partner;
-    if (sh) add(sh, 3, rel, start, { needStart: true, ...(divorced != null ? { endOverride: divorced, exit: 'drift' } : {}) });
-    for (const r of f.child_ref_list || []) add(r.ref, 4, g3(genderOf(people.get(r.ref)), lang.son, lang.daughter, lang.child), null);
+    if (sh) {
+      const side = spouseN % 2 ? -1 : 1;
+      add(sh, 3, rel, start, { needStart: true, side, ...(divorced != null ? { endOverride: divorced, exit: 'drift' } : {}) });
+      if (members.get(sh)?.side === side) spouseN++;
+    }
+    for (const r of f.child_ref_list || []) {
+      const side = kidN % 2 ? 1 : -1;
+      add(r.ref, 4, g3(genderOf(people.get(r.ref)), lang.son, lang.daughter, lang.child), null, { side });
+      if (members.get(r.ref)?.side === side) kidN++;
+    }
   }
   if (opts.grandchildren !== false) {
-    for (const [h, m] of [...members]) if (m.group === 4) for (const gh of childrenOf(h)) add(gh, 5, g3(genderOf(people.get(gh)), lang.grandson, lang.granddaughter, lang.grandchild), null);
+    for (const [h, m] of [...members]) if (m.group === 4) for (const gh of childrenOf(h)) add(gh, 5, g3(genderOf(people.get(gh)), lang.grandson, lang.granddaughter, lang.grandchild), null, { side: m.side });
   }
 
   // Ehepartner der Nachkommen (Schwiegersohn/-tochter, bei Enkeln einfach "Partner")
@@ -138,7 +155,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
         const divorced = famEvents(f, 'Divorce')[0];
         const kidBirths = (f.child_ref_list || []).map((r) => birthOf(r.ref)).filter((y) => y != null);
         const key = m.group === 4 ? g3(genderOf(people.get(sh)), 'sonInLaw', 'daughterInLaw', 'partner') : 'partner';
-        add(sh, 7, key, married ?? (kidBirths.length ? Math.min(...kidBirths) - 1 : null), { needStart: true, ...(divorced != null ? { endOverride: divorced, exit: 'drift' } : {}) });
+        add(sh, 7, key, married ?? (kidBirths.length ? Math.min(...kidBirths) - 1 : null), { needStart: true, side: m.side, ...(divorced != null ? { endOverride: divorced, exit: 'drift' } : {}) });
       }
     }
   }

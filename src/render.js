@@ -16,6 +16,7 @@ function setupFonts() {
 
 const PALETTE = ['#ff6b7a', '#5aa9ff', '#4fe0a6', '#c58bff', '#ffa85c', '#4de1ee', '#ff8fd0', '#b6e36a', '#9fb4ff', '#f0e68c'];
 const GOLD = '#ffc857';
+const LEAD = 2;   // Jahre vor der Geburt, ab denen die Zeitleiste läuft (wie in timeline.js)
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const ease = (x) => { x = clamp01(x); return x * x * (3 - 2 * x); };
 const frac = (x) => x - Math.floor(x);
@@ -31,13 +32,13 @@ export async function render(model, opt) {
   const headY = H * 0.47;
   const visibleYears = 20;
   const ppy = (H - headY) / visibleYears;  // Pixel pro Lebensjahr
-  const t0 = model.person.birth, t1 = model.endT;
+  const tb = model.person.birth, t0 = tb - LEAD, t1 = model.endT;
   const mainSec = opt.seconds || Math.max(32, Math.min(75, (t1 - t0) * 0.85));
   const endSec = 11;
   const total = mainSec + endSec;
 
   // ---- Zeitraffer: um Ereignisse herum langsamer
-  const eventTs = model.members.flatMap((m) => [m.initial ? null : m.start, m.end]).filter((t) => t != null && t > t0 && t <= t1);
+  const eventTs = [tb, ...model.members.flatMap((m) => [m.initial ? null : m.start, m.end])].filter((t) => t != null && t > t0 && t <= t1);
   const dy = 0.02, n = Math.ceil((t1 - t0) / dy);
   const cum = new Float64Array(n + 1);
   for (let i = 1; i <= n; i++) {
@@ -54,19 +55,20 @@ export async function render(model, opt) {
   const tauOf = (t) => { const i = Math.max(0, Math.min(n, Math.round((t - t0) / dy))); return (cum[i] / cumTotal) * mainSec; };
 
   // ---- Mitglieder vorbereiten
-  const me = { id: 'me', name: '', rel: opt.anonymous ? (model.labels?.me || 'Ich') : model.person.first, group: 3, color: GOLD, initial: true, start: t0, end: null, isMe: true };   // statt "Ich": nur der Vorname
+  const me = { id: 'me', name: '', rel: opt.anonymous ? (model.labels?.me || 'Ich') : model.person.first, group: 3, color: GOLD, initial: false, birth: true, start: tb, end: null, isMe: true };   // statt "Ich": nur der Vorname
   const all = [...model.members.map((m, i) => ({ ...m, ...(opt.anonymous ? { name: '' } : {}), color: PALETTE[i % PALETTE.length] })), me];
   all.sort((a, b) => (a.group - b.group) || (a.start - b.start));
   const entryDur = 2.2, exitDur = 2.6;
   for (const m of all) {
     m.tauIn = m.initial ? -1e9 : tauOf(m.start);
     m.tauOut = m.end != null ? tauOf(m.end) : null;
-    m.side = Math.random() < 0.5 ? -1 : 1;
+    m.fixedSide = m.side;   // vom Modell vorgegebene Seite (links/rechts), sonst Standardverteilung
+    m.side = m.side ?? (Math.random() < 0.5 ? -1 : 1);
     m.x = null; m.hist = []; m.frozenX = null;
     m.rank = all.indexOf(m);
   }
   let friendIdx = 0;
-  for (const m of all) m.leftSide = m.group <= 2 || (m.group === 6 && friendIdx++ % 2 === 0);
+  for (const m of all) m.leftSide = m.fixedSide != null ? m.fixedSide < 0 : m.group <= 2 || (m.group === 6 && friendIdx++ % 2 === 0);
   // Nähe zur Hauptperson: Kinder, Partner, Eltern/Enkel, Geschwister, dann der Rest (Großeltern, Freunde …)
   const tier = (m) => (m.group === 4 ? 0 : m.group === 3 ? 1 : m.group === 1 || m.group === 5 ? 2 : m.group === 2 ? 3 : 4);
   const byCloseness = (a, b) => tier(a) - tier(b) || a.group - b.group || a.start - b.start;
@@ -219,14 +221,14 @@ export async function render(model, opt) {
     const rulerA = trailFade * (inMain ? 1 : 1);
     if (rulerA > 0) {
       c.textAlign = 'left'; c.font = `${Math.round(21 * S)}px ${SANS}`;
-      for (let age = 0; t0 + age <= t1 + 12; age += 5) {
-        const y = headY + (tNow - (t0 + age)) * ppy;
+      for (let age = 0; tb + age <= t1 + 12; age += 5) {
+        const y = headY + (tNow - (tb + age)) * ppy;
         if (y < headY - 180 * S || y > H + 20) continue;
         const a = rulerA * 0.55 * clamp01((y - (headY - 180 * S)) / (140 * S)) * clamp01((H - y) / (120 * S) + 0.2);
         c.globalAlpha = a; c.fillStyle = '#b9c7ee';
         c.fillRect(34 * S, y, 16 * S, 1.5 * S);
         c.fillText(String(age), 58 * S, y + 7 * S);
-        if (age % 10 === 0) { c.globalAlpha = a * 0.6; c.font = `${Math.round(17 * S)}px ${SANS}`; c.fillText(String(Math.floor(t0 + age)), 58 * S, y + 27 * S); c.font = `${Math.round(21 * S)}px ${SANS}`; }
+        if (age % 10 === 0) { c.globalAlpha = a * 0.6; c.font = `${Math.round(17 * S)}px ${SANS}`; c.fillText(String(Math.floor(tb + age)), 58 * S, y + 27 * S); c.font = `${Math.round(21 * S)}px ${SANS}`; }
       }
       c.globalAlpha = 1;
     }
@@ -299,7 +301,7 @@ export async function render(model, opt) {
       const fade = clamp01(1 - (tau - (mainSec - 1.5)) / 1.5) * clamp01((tau - 3) / 1.5);
       c.globalAlpha = 0.8 * fade; c.textAlign = 'center'; c.shadowColor = 'rgba(0,0,0,.9)'; c.shadowBlur = 8 * S;
       c.font = `${Math.round(30 * S)}px ${SERIFI}`; c.fillStyle = '#dfe8ff';
-      c.fillText(`${opt.ageLabel} ${Math.floor(tNow - t0)}  ·  ${Math.floor(tNow)}`, W / 2, H - 70 * S);
+      c.fillText((tNow >= tb ? `${opt.ageLabel} ${Math.floor(tNow - tb)}  ·  ` : '') + Math.floor(tNow), W / 2, H - 70 * S);
       c.shadowBlur = 0; c.globalAlpha = 1;
     }
 
@@ -309,7 +311,7 @@ export async function render(model, opt) {
       c.globalAlpha = a; c.textAlign = 'center'; c.shadowColor = 'rgba(0,0,0,.95)'; c.shadowBlur = 14 * S;
       c.fillStyle = '#fff'; c.font = `${Math.round(68 * S)}px ${SERIF}`; if (!opt.anonymous) c.fillText(model.person.name, W / 2, H * 0.2);
       c.fillStyle = '#c9d6f5'; c.font = `${Math.round(36 * S)}px ${SERIFI}`;
-      c.fillText(`${Math.floor(t0)}${model.person.death ? ' – ' + Math.floor(model.person.death) : ''}`, W / 2, H * 0.2 + 56 * S);
+      c.fillText(`${Math.floor(tb)}${model.person.death ? ' – ' + Math.floor(model.person.death) : ''}`, W / 2, H * 0.2 + 56 * S);
       c.shadowBlur = 0; c.globalAlpha = 1;
     }
 

@@ -41,8 +41,10 @@ In der `config_<name>.json` unter `"extras"` (oder per `--extras datei.json`) ei
   mit `"exit": "star"` steigt sie als Stern auf (verstorben).
 - Statt `name` geht auch `"id": "I0123"`: Name (und ein Sterbedatum, dann als Stern) kommen aus Gramps.
 
-Die Hauptperson bleibt immer in der Bildmitte: Großeltern, Eltern und Geschwister laufen links, Partner, Kinder
-und Enkel rechts, Freunde abwechselnd ganz außen.
+Die Zeitleiste beginnt zwei Jahre vor der Geburt der Hauptperson; sie selbst erscheint erst mit ihrer Geburt in der Bildmitte.
+Alle anderen verteilen sich auf beide Seiten: Vater links, Mutter rechts (Großeltern auf der Seite ihres Kindes), Geschwister,
+Partner, Kinder und Enkel wechseln sich ab, Schwiegerkinder stehen auf der Seite ihres Partners, Freunde abwechselnd außen.
+Je näher an der Mitte, desto enger die Beziehung (Kinder, Partner, Eltern/Enkel, Geschwister, Rest).
 
 ## Web-Oberfläche
 
