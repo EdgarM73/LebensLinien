@@ -100,7 +100,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
     if (end != null && end <= bP) return;           // starb vor der Geburt der Hauptperson
     if (start > endT) return;                       // kam erst nach Ende hinzu
     if (end != null && end > endT) end = null;      // bleibt bis zum Schluss
-    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP), end, exit: end == null ? null : ex, initial: start <= bP });
+    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP), end, exit: end == null ? null : ex, initial: start <= bP, birth: startRaw == null && birth != null && start > bP });   // birth: Linie entsteht mit der Geburt
   };
 
   const parents = parentsOf(rootHandle);

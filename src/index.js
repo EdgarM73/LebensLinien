@@ -24,6 +24,7 @@ const { values: a, positionals } = parseArgs({
     lang: { type: 'string' },
     extras: { type: 'string' },               // JSON-Datei mit Zusatzpersonen (Freunde, Kollegen …)
     audio: { type: 'string' },                // optionale Musikdatei
+    anonymous: { type: 'boolean' },           // keine Namen zeigen: "Ich", "Ehefrau", "Sohn" …
     'no-grandchildren': { type: 'boolean' },
     help: { type: 'boolean', short: 'h' },
   },
@@ -36,7 +37,7 @@ if (a.help) {
   --demo               Beispieldaten statt Gramps Web
   --still 30           nur ein Standbild (PNG) bei Sekunde 30 erzeugen
   --dump modell.json   berechnetes Modell speichern;  --model modell.json  daraus rendern
-  --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --no-grandchildren`);
+  --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --anonymous  --no-grandchildren`);
   process.exit(0);
 }
 
@@ -82,10 +83,11 @@ if (a.dump) { writeFileSync(a.dump, JSON.stringify(model, null, 2)); console.log
 const [W, H] = a.size.split('x').map(Number);
 // Ausgabename: standardmäßig der Name der Person (ohne unzulässige Dateizeichen)
 const safeName = (model.person.name || 'Lebenslinien').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Lebenslinien';
-const outFile = a.out || cfg.out || `${safeName}.mp4`;
+const anonymous = Boolean(a.anonymous || cfg.anonymous);
+const outFile = a.out || cfg.out || `${anonymous ? 'Lebenslinien' : safeName}.mp4`;   // ohne Namen auch nicht im Dateinamen
 const t = localize(model, lang);
 const texts = { title: cfg.texts?.title || t.title, lines: cfg.texts?.lines || t.lines };
-const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : undefined, ageLabel: t.age };
+const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : undefined, ageLabel: t.age, anonymous };
 
 if (a.still != null) {
   const png = await render(model, { ...opt, still: +a.still });

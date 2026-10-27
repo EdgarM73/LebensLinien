@@ -22,7 +22,7 @@ Bei mehreren Namenstreffern werden die Gramps-IDs aufgelistet; dann `person` auf
 
 Nützlich: `--demo` (Beispieldaten, ohne Konfiguration), `--still 30` (nur ein PNG bei Sekunde 30), `--dump modell.json` /
 `--model modell.json` (Daten prüfen oder von Hand korrigieren), `--seconds`, `--audio musik.mp3`,
-`--lang en`, `--size 720x1280`, `--no-grandchildren`.
+`--lang en`, `--size 720x1280`, `--no-grandchildren`, `--anonymous` (ohne Namen: nur "Ich", "Ehefrau", "Sohn" …; in der Konfiguration `"anonymous": true`).
 
 ## Sprache
 

@@ -165,7 +165,7 @@ function validateConfig(input, previous) {
     ? { title: title.slice(0, 120), lines: [lines[0] || '', lines[1] || ''] }
     : undefined;
   if (title.length > 120 || lines.some((line) => line.length > 180)) throw new InputError('Der Titel darf 120, jede Schlusszeile 180 Zeichen lang sein.');
-  return { url, username, password, person, lang, extras, ...(texts ? { texts } : {}) };
+  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(texts ? { texts } : {}) };
 }
 
 function runGenerator(user, config) {

@@ -147,7 +147,7 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
 1. **Registrieren** (beim ersten Mal): Benutzername (3 bis 40 Zeichen), Passwort (mindestens 12 Zeichen) und den Einladungscode eingeben.
    Dieses Konto gehört nur zu Lebenslinien und hat nichts mit Gramps zu tun.
 2. **01 Gramps-Verbindung:** Server-URL (HTTPS), Gramps-Benutzername und -Passwort, **Hauptperson** (am besten die Gramps-ID, z. B. `I0044`;
-   bei einem Namen mit mehreren Treffern wird abgebrochen) und die **Sprache** (Deutsch, English, Türkçe, Bosanski).
+   bei einem Namen mit mehreren Treffern wird abgebrochen), die **Sprache** (Deutsch, English, Türkçe, Bosanski) und ob die Namen angezeigt werden. Bei „Ohne Namen“ steht nur die Beziehung im Bild („Ich“, „Ehefrau“, „Sohn“ …), auch der Titel am Anfang und der Dateiname enthalten dann keinen Namen.
    Optional eine **Hintergrundmusik** hochladen (MP3, WAV, M4A, AAC, OGG oder FLAC, höchstens 50 MB).
 3. **02 Weitere Menschen:** Freunde, Kollegen und andere Nicht-Verwandte hinzufügen:
    - Name oder Gramps-ID (mit ID kommen Name und Sterbedatum aus Gramps),

@@ -75,7 +75,7 @@ function readConfig() {
     };
   }).filter((item) => item.name || item.id || item.start || item.end || item.rel);
   return {
-    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), extras,
+    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', extras,
     texts: {
       title: document.querySelector('#ending-title').value,
       lines: [document.querySelector('#ending-line-1').value, document.querySelector('#ending-line-2').value],
@@ -93,6 +93,7 @@ function setSuggestedTexts(texts) {
 function showConfig(config, defaults) {
   for (const name of ['url', 'username', 'person', 'lang']) if (config[name] != null) configForm.elements[name].value = config[name];
   configForm.elements.password.value = '';
+  configForm.elements.names.value = config.anonymous ? 'hide' : 'show';
   setSuggestedTexts(defaults);
   if (config.texts) {
     document.querySelector('#ending-title').value = config.texts.title || '';

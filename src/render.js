@@ -54,8 +54,8 @@ export async function render(model, opt) {
   const tauOf = (t) => { const i = Math.max(0, Math.min(n, Math.round((t - t0) / dy))); return (cum[i] / cumTotal) * mainSec; };
 
   // ---- Mitglieder vorbereiten
-  const me = { id: 'me', name: '', rel: model.person.first, group: 3, color: GOLD, initial: true, start: t0, end: null, isMe: true };   // statt "Ich": nur der Vorname
-  const all = [...model.members.map((m, i) => ({ ...m, color: PALETTE[i % PALETTE.length] })), me];
+  const me = { id: 'me', name: '', rel: opt.anonymous ? (model.labels?.me || 'Ich') : model.person.first, group: 3, color: GOLD, initial: true, start: t0, end: null, isMe: true };   // statt "Ich": nur der Vorname
+  const all = [...model.members.map((m, i) => ({ ...m, ...(opt.anonymous ? { name: '' } : {}), color: PALETTE[i % PALETTE.length] })), me];
   all.sort((a, b) => (a.group - b.group) || (a.start - b.start));
   const entryDur = 2.2, exitDur = 2.6;
   for (const m of all) {
@@ -186,7 +186,7 @@ export async function render(model, opt) {
       const base = m.x + amp * (0.7 * Math.sin(tNow * 2.1 + m.rank * 1.7) + 0.4 * Math.sin(tNow * 0.9 + m.rank * 2.9) + 0.25 * Math.sin(tau * 1.3 + m.rank * 0.8));
       let hx = base, state = 'lane';
       const inT = tau - m.tauIn;
-      if (inT < entryDur) hx = base + m.side * (W * 0.9) * (1 - ease(inT / entryDur)) ** 2;
+      if (inT < entryDur && !m.birth) hx = base + m.side * (W * 0.9) * (1 - ease(inT / entryDur)) ** 2;
       if (m.tauOut != null && tau >= m.tauOut) {
         const u = (tau - m.tauOut) / exitDur;
         if (m.exit === 'drift') { hx = m.frozenX + (m.side || 1) * W * ease(u) ** 2 * 1.2; state = 'drift'; if (u < 1.2) m.hist.push({ t: tNow, x: hx }); }
@@ -255,8 +255,9 @@ export async function render(model, opt) {
       if (!m.vis) continue;
       const hx = m.hx;
       if (m.state === 'lane') {
-        dot(hx, headY, m.color, 7 * S);
-        label(m.rel, m.name, hx, headY - (56 + (tight && m.stag ? 62 : 0)) * S, 1, Math.max(0.78, labelScale));
+        const pop = m.birth ? ease((tau - m.tauIn) / 1.6) : 1;   // Neugeborene blenden an ihrem Platz auf, statt hereinzufahren
+        dot(hx, headY, m.color, (3 + 4 * pop) * S, pop);
+        label(m.rel, m.name, hx, headY - (56 + (tight && m.stag ? 62 : 0)) * S, pop, Math.max(0.78, labelScale));
       } else if (m.state === 'stay') {
         const y = headY + (rowY - headY) * ease(m.u);
         dot(hx, y, m.color, 7 * S);
@@ -306,7 +307,7 @@ export async function render(model, opt) {
     if (tau < 5) {
       const a = ease(tau / 1) * (1 - ease((tau - 3.5) / 1.5));
       c.globalAlpha = a; c.textAlign = 'center'; c.shadowColor = 'rgba(0,0,0,.95)'; c.shadowBlur = 14 * S;
-      c.fillStyle = '#fff'; c.font = `${Math.round(68 * S)}px ${SERIF}`; c.fillText(model.person.name, W / 2, H * 0.2);
+      c.fillStyle = '#fff'; c.font = `${Math.round(68 * S)}px ${SERIF}`; if (!opt.anonymous) c.fillText(model.person.name, W / 2, H * 0.2);
       c.fillStyle = '#c9d6f5'; c.font = `${Math.round(36 * S)}px ${SERIFI}`;
       c.fillText(`${Math.floor(t0)}${model.person.death ? ' – ' + Math.floor(model.person.death) : ''}`, W / 2, H * 0.2 + 56 * S);
       c.shadowBlur = 0; c.globalAlpha = 1;
