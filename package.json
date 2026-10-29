@@ -1,6 +1,6 @@
 {
   "name": "lebenslinien",
-  "version": "1.0.0",
+  "version": "2026.10.01",
   "description": "Erzeugt aus einer Person in Gramps Web ein Lebenslinien-Video (Sternenhimmel-Animation)",
   "type": "module",
   "bin": { "lebenslinien": "src/index.js" },
