@@ -28,7 +28,7 @@ If a name matches several people, the Gramps IDs are listed; then set `person` t
 
 Useful options: `--demo` (sample data, no configuration needed), `--still 30` (only a PNG at second 30), `--dump model.json` /
 `--model model.json` (inspect or hand-edit the data), `--seconds`, `--audio music.mp3`, `--lang en`, `--size 720x1280`,
-`--no-grandchildren`, `--anonymous` (no names: only "Me", "Wife", "Son" …; in the configuration `"anonymous": true`).
+`--no-grandchildren`, `--anonymous` (no names: only "Me", "Wife", "Son" …; in the configuration `"anonymous": true`). The main person is then labelled "Me"; set a different label with `--main-label Grandpa` or `"mainLabel": "Grandpa"` (or per language `{"de": "Opa", "tr": "Dede"}`).
 
 ## Language
 
@@ -51,6 +51,7 @@ The timeline starts two years before the main person is born; the main person ap
 Everyone else is spread over both sides: father on the left, mother on the right (grandparents on the side of their child);
 siblings, partners, children and grandchildren alternate; children-in-law stand on their partner's side; friends alternate
 on the outer edges. The closer to the centre, the closer the relationship (children, partner, parents/grandchildren, siblings, rest).
+For newborns (children, siblings, grandchildren) the space for their line is cleared 10 months before the birth (`RESERVE` in `src/render.js`).
 
 ## Web interface
 

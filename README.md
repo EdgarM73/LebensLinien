@@ -24,7 +24,7 @@ Bei mehreren Namenstreffern werden die Gramps-IDs aufgelistet; dann `person` auf
 
 Nützlich: `--demo` (Beispieldaten, ohne Konfiguration), `--still 30` (nur ein PNG bei Sekunde 30), `--dump modell.json` /
 `--model modell.json` (Daten prüfen oder von Hand korrigieren), `--seconds`, `--audio musik.mp3`,
-`--lang en`, `--size 720x1280`, `--no-grandchildren`, `--anonymous` (ohne Namen: nur "Ich", "Ehefrau", "Sohn" …; in der Konfiguration `"anonymous": true`).
+`--lang en`, `--size 720x1280`, `--no-grandchildren`, `--anonymous` (ohne Namen: nur "Ich", "Ehefrau", "Sohn" …; in der Konfiguration `"anonymous": true`). Die Hauptperson heißt dann "Ich"; mit `--main-label Opa` bzw. `"mainLabel": "Opa"` (oder je Sprache `{"de": "Opa", "tr": "Dede"}`) legst du eine andere Bezeichnung fest.
 
 ## Sprache
 
@@ -47,6 +47,7 @@ Die Zeitleiste beginnt zwei Jahre vor der Geburt der Hauptperson; sie selbst ers
 Alle anderen verteilen sich auf beide Seiten: Vater links, Mutter rechts (Großeltern auf der Seite ihres Kindes), Geschwister,
 Partner, Kinder und Enkel wechseln sich ab, Schwiegerkinder stehen auf der Seite ihres Partners, Freunde abwechselnd außen.
 Je näher an der Mitte, desto enger die Beziehung (Kinder, Partner, Eltern/Enkel, Geschwister, Rest).
+Für Neugeborene (Kinder, Geschwister, Enkel) wird der Platz ihrer Linie schon 10 Monate vor der Geburt freigemacht (`RESERVE` in `src/render.js`).
 
 ## Web-Oberfläche
 
@@ -54,7 +55,7 @@ Neben der Kommandozeile gibt es eine lokale Web-Oberfläche für mehrere Nutzerk
 
   npm run web
 
-Anschließend `http://127.0.0.1:3000` öffnen. Node.js 18 oder neuer, `npm install` und `ffmpeg` im PATH werden benötigt. Neue Konten brauchen ein Passwort mit mindestens 12 Zeichen. Zum Schutz vor offenen Registrierungen kann vor dem Start ein Einladungscode gesetzt werden:
+Anschließend `http://127.0.0.1:3000` öffnen. Node.js 18 oder neuer, `npm install` und `ffmpeg` im PATH werden benötigt. Neue Konten brauchen ein Passwort mit mindestens 8 Zeichen. Zum Schutz vor offenen Registrierungen kann vor dem Start ein Einladungscode gesetzt werden:
 
   $env:APP_REGISTRATION_KEY = "ein-langer-zufaelliger-code"
   npm run web

@@ -16,6 +16,7 @@ function setupFonts() {
 
 const PALETTE = ['#ff6b7a', '#5aa9ff', '#4fe0a6', '#c58bff', '#ffa85c', '#4de1ee', '#ff8fd0', '#b6e36a', '#9fb4ff', '#f0e68c'];
 const GOLD = '#ffc857';
+const RESERVE = 10 / 12;   // Jahre: so lange vor einer Geburt wird der Platz der neuen Linie schon freigehalten
 const LEAD = 2;   // Jahre vor der Geburt, ab denen die Zeitleiste läuft (wie in timeline.js)
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const ease = (x) => { x = clamp01(x); return x * x * (3 - 2 * x); };
@@ -55,12 +56,13 @@ export async function render(model, opt) {
   const tauOf = (t) => { const i = Math.max(0, Math.min(n, Math.round((t - t0) / dy))); return (cum[i] / cumTotal) * mainSec; };
 
   // ---- Mitglieder vorbereiten
-  const me = { id: 'me', name: '', rel: opt.anonymous ? (model.labels?.me || 'Ich') : model.person.first, group: 3, color: GOLD, initial: false, birth: true, start: tb, end: null, isMe: true };   // statt "Ich": nur der Vorname
+  const me = { id: 'me', name: '', rel: opt.anonymous ? (opt.mainLabel || model.labels?.me || 'Ich') : model.person.first, group: 3, color: GOLD, initial: false, birth: true, start: tb, end: null, isMe: true };   // statt "Ich": nur der Vorname
   const all = [...model.members.map((m, i) => ({ ...m, ...(opt.anonymous ? { name: '' } : {}), color: PALETTE[i % PALETTE.length] })), me];
   all.sort((a, b) => (a.group - b.group) || (a.start - b.start));
   const entryDur = 2.2, exitDur = 2.6;
   for (const m of all) {
     m.tauIn = m.initial ? -1e9 : tauOf(m.start);
+    m.tauReserve = m.birth ? tauOf(m.start - RESERVE) : m.tauIn;   // Geborene: Platz schon früher freimachen
     m.tauOut = m.end != null ? tauOf(m.end) : null;
     m.fixedSide = m.side;   // vom Modell vorgegebene Seite (links/rechts), sonst Standardverteilung
     m.side = m.side ?? (Math.random() < 0.5 ? -1 : 1);
@@ -161,7 +163,7 @@ export async function render(model, opt) {
     const trailFade = 1 - ease(endTau / 2.5);
 
     // aktive Bahnen bestimmen
-    const lanes = all.filter((m) => tau >= m.tauIn && (m.tauOut == null || tau < m.tauOut) && !(m.rise));
+    const lanes = all.filter((m) => tau >= m.tauReserve && (m.tauOut == null || tau < m.tauOut) && !(m.rise));
     // Die Hauptperson bleibt immer in der Bildmitte; Eltern, Geschwister und Großeltern links,
     // Kinder, Enkel und Partner rechts, Freunde abwechselnd außen; je Seite nach Nähe (siehe tier) sortiert.
     const mid = W / 2;

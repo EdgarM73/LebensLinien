@@ -29,9 +29,9 @@ function setMode(mode) {
   document.querySelector('#invite-field').hidden = login || !window.registrationKeyRequired;
   const password = authForm.elements.password;
   password.autocomplete = login ? 'current-password' : 'new-password';
-  password.minLength = login ? 1 : 12;
+  password.minLength = login ? 1 : 8;
   document.querySelector('#auth-submit').innerHTML = login ? 'Anmelden <span aria-hidden="true">↗</span>' : 'Konto erstellen <span aria-hidden="true">↗</span>';
-  document.querySelector('#auth-note').textContent = login ? 'Deine Verbindungsdaten bleiben verschlüsselt auf diesem Server.' : 'Passwort mindestens 12 Zeichen. Zugangsdaten werden verschlüsselt gespeichert.';
+  document.querySelector('#auth-note').textContent = login ? 'Passwort vergessen? Bitte den Admin um einen Reset-Link bitten.' : 'Passwort mindestens 8 Zeichen. Zugangsdaten werden verschlüsselt gespeichert.';
   showError(document.querySelector('#auth-error'), '');
 }
 
@@ -75,7 +75,7 @@ function readConfig() {
     };
   }).filter((item) => item.name || item.id || item.start || item.end || item.rel);
   return {
-    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', extras,
+    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', mainLabel: configForm.elements.mainLabel.value.trim(), extras,
     texts: {
       title: document.querySelector('#ending-title').value,
       lines: [document.querySelector('#ending-line-1').value, document.querySelector('#ending-line-2').value],
@@ -94,6 +94,8 @@ function showConfig(config, defaults) {
   for (const name of ['url', 'username', 'person', 'lang']) if (config[name] != null) configForm.elements[name].value = config[name];
   configForm.elements.password.value = '';
   configForm.elements.names.value = config.anonymous ? 'hide' : 'show';
+  configForm.elements.mainLabel.value = config.mainLabel || '';
+  updateMainLabel();
   setSuggestedTexts(defaults);
   if (config.texts) {
     document.querySelector('#ending-title').value = config.texts.title || '';
@@ -133,6 +135,18 @@ async function enter(user) {
 async function initialize() {
   const status = await request('/api/status');
   window.registrationKeyRequired = status.registrationKeyRequired;
+  const resetToken = new URLSearchParams(location.hash.slice(1)).get('reset');
+  if (resetToken) {
+    authView.hidden = false;
+    workspace.hidden = true;
+    document.querySelector('.mode-tabs').hidden = true;
+    authForm.hidden = true;
+    document.querySelector('#auth-note').hidden = true;
+    const resetForm = document.querySelector('#reset-form');
+    resetForm.dataset.token = resetToken;
+    resetForm.hidden = false;
+    return;
+  }
   try {
     const me = await request('/api/me');
     await enter(me);
@@ -145,6 +159,10 @@ async function initialize() {
 document.querySelector('#login-tab').addEventListener('click', () => setMode('login'));
 document.querySelector('#register-tab').addEventListener('click', () => setMode('register'));
 document.querySelector('#add-extra').addEventListener('click', () => addExtra());
+
+function updateMainLabel() { configForm.elements.mainLabel.disabled = configForm.elements.names.value !== 'hide'; }
+configForm.elements.names.addEventListener('change', updateMainLabel);
+updateMainLabel();
 
 configForm.elements.lang.addEventListener('change', async () => {
   if (!suggestedTexts) return;
@@ -247,4 +265,32 @@ setMode('login');
 initialize().catch((error) => {
   authView.hidden = false;
   showError(document.querySelector('#auth-error'), `Server nicht erreichbar: ${error.message}`);
+});
+
+document.querySelector('#reset-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const password = form.elements.password.value;
+  if (password !== form.elements.confirmPassword.value) {
+    showError(document.querySelector('#reset-error'), 'Die Passwörter stimmen nicht überein.');
+    return;
+  }
+  const button = document.querySelector('#reset-submit');
+  button.disabled = true;
+  showError(document.querySelector('#reset-error'), '');
+  try {
+    await request('/api/password-reset/complete', {
+      method: 'POST',
+      body: JSON.stringify({ token: form.dataset.token, password }),
+    });
+    form.hidden = true;
+    document.querySelector('#reset-success').hidden = false;
+    document.querySelector('.mode-tabs').hidden = false;
+    authForm.hidden = false;
+    document.querySelector('#auth-note').hidden = false;
+    setMode('login');
+    history.replaceState(null, '', `${location.pathname}${location.search}`);
+  } catch (error) {
+    showError(document.querySelector('#reset-error'), error.message);
+  } finally { button.disabled = false; }
 });

@@ -24,6 +24,7 @@ const { values: a, positionals } = parseArgs({
     lang: { type: 'string' },
     extras: { type: 'string' },               // JSON-Datei mit Zusatzpersonen (Freunde, Kollegen …)
     audio: { type: 'string' },                // optionale Musikdatei
+    'main-label': { type: 'string' },         // Bezeichnung der Hauptperson, wenn keine Namen gezeigt werden (z. B. "Opa")
     anonymous: { type: 'boolean' },           // keine Namen zeigen: "Ich", "Ehefrau", "Sohn" …
     'no-grandchildren': { type: 'boolean' },
     help: { type: 'boolean', short: 'h' },
@@ -37,7 +38,7 @@ if (a.help) {
   --demo               Beispieldaten statt Gramps Web
   --still 30           nur ein Standbild (PNG) bei Sekunde 30 erzeugen
   --dump modell.json   berechnetes Modell speichern;  --model modell.json  daraus rendern
-  --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --anonymous  --no-grandchildren`);
+  --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --anonymous  --main-label Opa  --no-grandchildren`);
   process.exit(0);
 }
 
@@ -84,10 +85,13 @@ const [W, H] = a.size.split('x').map(Number);
 // Ausgabename: standardmäßig der Name der Person (ohne unzulässige Dateizeichen)
 const safeName = (model.person.name || 'Lebenslinien').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Lebenslinien';
 const anonymous = Boolean(a.anonymous || cfg.anonymous);
+let mainLabel = a['main-label'] ?? cfg.mainLabel;   // Text oder je Sprache: {"de": "Opa", "tr": "Dede"}
+if (mainLabel && typeof mainLabel === 'object') mainLabel = mainLabel[lang] || Object.values(mainLabel)[0];
+mainLabel = String(mainLabel || '').trim() || undefined;
 const outFile = a.out || cfg.out || `${anonymous ? 'Lebenslinien' : safeName}.mp4`;   // ohne Namen auch nicht im Dateinamen
 const t = localize(model, lang);
 const texts = { title: cfg.texts?.title || t.title, lines: cfg.texts?.lines || t.lines };
-const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : undefined, ageLabel: t.age, anonymous };
+const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : undefined, ageLabel: t.age, anonymous, mainLabel };
 
 if (a.still != null) {
   const png = await render(model, { ...opt, still: +a.still });

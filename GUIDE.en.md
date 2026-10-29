@@ -153,7 +153,7 @@ The interface should **never** be exposed to the internet unprotected. At least 
 2. **01 Gramps-Verbindung (Gramps connection):** server URL (HTTPS), Gramps user name and password, **Hauptperson (main person)**
    (preferably the Gramps ID, e.g. `I0044`; a name with several matches aborts), the **Sprache (language)** (Deutsch, English, Türkçe,
    Bosanski) and whether names are shown. With "Ohne Namen" (without names) only the relationship appears in the picture
-   ("Me", "Wife", "Son" …), and neither the opening title nor the file name contains a name.
+   ("Me", "Wife", "Son" …), and neither the opening title nor the file name contains a name. In the field **Bezeichnung der Hauptperson (label of the main person)** you set what the main person is called then (e.g. "Grandpa" or "Mom"); empty means "Me".
    Optionally upload **Hintergrundmusik (background music)** (MP3, WAV, M4A, AAC, OGG or FLAC, at most 50 MB).
 3. **02 Weitere Menschen (more people):** add friends, colleagues and other non-relatives:
    - name or Gramps ID (with an ID, name and death date come from Gramps),

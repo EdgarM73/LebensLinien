@@ -6,11 +6,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkS
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LANGS } from './src/i18n.js';
+import { consumePasswordReset } from './src/password-reset.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.resolve(process.env.APP_DATA_DIR || path.join(ROOT, 'data'));
 const VIDEO_DIR = path.join(DATA, 'videos');
 const AUDIO_DIR = path.join(DATA, 'audio');
+const RESET_DIR = path.join(DATA, 'password-resets');
 const USERS_FILE = path.join(DATA, 'users.json');
 const KEY_FILE = path.join(DATA, 'master.key');
 const PORT = Number(process.env.PORT || 3000);
@@ -165,7 +167,8 @@ function validateConfig(input, previous) {
     ? { title: title.slice(0, 120), lines: [lines[0] || '', lines[1] || ''] }
     : undefined;
   if (title.length > 120 || lines.some((line) => line.length > 180)) throw new InputError('Der Titel darf 120, jede Schlusszeile 180 Zeichen lang sein.');
-  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(texts ? { texts } : {}) };
+  const mainLabel = String(input.mainLabel || '').trim().slice(0, 40);
+  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(mainLabel ? { mainLabel } : {}), ...(texts ? { texts } : {}) };
 }
 
 function runGenerator(user, config) {
@@ -238,7 +241,7 @@ const server = createServer(async (req, res) => {
       if (username.length > 40 || password.length > 256) return json(res, 400, { error: 'Benutzername oder Passwort ist zu lang.' });
       if (url.pathname === '/api/register') {
         if (process.env.APP_REGISTRATION_KEY && input.invite !== process.env.APP_REGISTRATION_KEY) return json(res, 403, { error: 'Einladungscode ist ungültig.' });
-        if (!/^[\p{L}\p{N}._-]{3,40}$/u.test(username) || password.length < 12 || password.length > 256) return json(res, 400, { error: 'Benutzername: 3–40 Zeichen. Passwort: mindestens 12 Zeichen.' });
+        if (!/^[\p{L}\p{N}._-]{3,40}$/u.test(username) || password.length < 8 || password.length > 256) return json(res, 400, { error: 'Benutzername: 3–40 Zeichen. Passwort: mindestens 8 Zeichen.' });
         if (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) return json(res, 409, { error: 'Benutzername ist bereits vergeben.' });
         const salt = randomBytes(16);
         users.push({ id: randomUUID(), username, salt: salt.toString('base64'), passwordHash: scryptSync(password, salt, 64).toString('base64'), config: null, lastVideo: null });
@@ -253,6 +256,21 @@ const server = createServer(async (req, res) => {
       const token = randomBytes(32).toString('base64url');
       sessions.set(token, { userId: user.id, expires: Date.now() + SESSION_MS });
       return json(res, 200, { username: user.username }, { 'Set-Cookie': `lebenslinien_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_MS / 1000}${process.env.COOKIE_SECURE === 'true' ? '; Secure' : ''}` });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/password-reset/complete') {
+      if (!rateAllowed(req, 'password-reset')) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
+      const input = await body(req);
+      const password = String(input.password || '');
+      if (password.length < 8 || password.length > 256) return json(res, 400, { error: 'Das Passwort muss 8–256 Zeichen lang sein.' });
+      const target = consumePasswordReset(input.token, users, RESET_DIR);
+      if (!target) return json(res, 400, { error: 'Der Reset-Link ist ungültig oder abgelaufen.' });
+      const salt = randomBytes(16);
+      target.salt = salt.toString('base64');
+      target.passwordHash = scryptSync(password, salt, 64).toString('base64');
+      saveUsers();
+      for (const [sessionToken, session] of sessions) if (session.userId === target.id) sessions.delete(sessionToken);
+      return json(res, 200, { ok: true });
     }
 
     const user = sessionUser(req);
