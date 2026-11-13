@@ -69,7 +69,7 @@ For each account it stores the Gramps connection, the main person, additional pe
 - **Test connection** checks the address and credentials right away; the **person search** finds the main person by name.
 - **Preview image** of the middle or the ending within seconds, before the whole video is created.
 - The video is created **in the background** with a progress bar and can then be played and downloaded right away.
-- Options: video language, with or without names, label of the main person, show or hide grandchildren, duration, music (MP3, WAV, M4A, AAC, OGG, FLAC up to 50 MB).
+- Options: video language, with or without names, label of the main person, show or hide grandchildren, duration, your own music (MP3, WAV, M4A, AAC, OGG, FLAC up to 50 MB) or no music. Without your own file the default music plays.
 - Account dialog to change the password or delete the account; interface in German or English (DE/EN switch).
 
 Locally without Docker (Node.js ≥ 18 and `ffmpeg` on the PATH):
@@ -110,7 +110,8 @@ If a name matches several people, the Gramps IDs are listed; then set `person` t
 | `--no-grandchildren` | without grandchildren (`"grandchildren": false`) |
 | `--anonymous` | no names, only relationships (`"anonymous": true`) |
 | `--main-label Grandpa` | label of the main person without names (`"mainLabel"`, also per language: `{"de": "Opa", "tr": "Dede"}`) |
-| `--audio music.mp3` | background music (`"audio"`) |
+| `--audio music.mp3` | your own background music (`"audio"`); without it the default music plays |
+| `--no-audio` | no music (`"audio": false`) |
 | `--size 720x1280`, `--fps 30` | image size and frame rate |
 | `--extras file.json` | additional companions from a separate file |
 
@@ -161,3 +162,5 @@ Changes per version: [RELEASE_NOTES.en.md](RELEASE_NOTES.en.md)
 ## License
 
 [MIT](LICENSE)
+
+The default music "Journey of Life" (`assets/music/journey-of-life.mp3`) was made with Suno.

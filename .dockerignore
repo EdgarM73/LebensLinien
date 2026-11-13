@@ -13,3 +13,4 @@ test-stammbaum-huber.ged
 *.gif
 promo
 .github
+!assets/music/*.mp3

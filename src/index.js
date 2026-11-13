@@ -7,6 +7,10 @@ import { buildModel, makeExtra } from './timeline.js';
 import { render } from './render.js';
 import { demoModel } from './demo.js';
 import { LANGS, localize } from './i18n.js';
+import { fileURLToPath } from 'node:url';
+
+// Standardmusik, wenn weder --audio noch "audio" angegeben ist; abschalten mit --no-audio bzw. "audio": false
+export const DEFAULT_AUDIO = fileURLToPath(new URL('../assets/music/journey-of-life.mp3', import.meta.url));
 
 const { values: a, positionals } = parseArgs({
   allowPositionals: true,
@@ -23,7 +27,8 @@ const { values: a, positionals } = parseArgs({
     seconds: { type: 'string' },              // Dauer des Hauptteils (sonst automatisch)
     lang: { type: 'string' },
     extras: { type: 'string' },               // JSON-Datei mit Zusatzpersonen (Freunde, Kollegen …)
-    audio: { type: 'string' },                // optionale Musikdatei
+    audio: { type: 'string' },                // eigene Musikdatei (sonst die Standardmusik)
+    'no-audio': { type: 'boolean' },          // ohne Musik
     'main-label': { type: 'string' },         // Bezeichnung der Hauptperson, wenn keine Namen gezeigt werden (z. B. "Opa")
     anonymous: { type: 'boolean' },           // keine Namen zeigen: "Ich", "Ehefrau", "Sohn" …
     'no-grandchildren': { type: 'boolean' },
@@ -38,7 +43,7 @@ if (a.help) {
   --demo               Beispieldaten statt Gramps Web
   --still 30           nur ein Standbild (PNG) bei Sekunde 30 erzeugen (auch: --still middle | end)
   --dump modell.json   berechnetes Modell speichern;  --model modell.json  daraus rendern
-  --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --anonymous  --main-label Opa  --no-grandchildren`);
+  --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --no-audio  --anonymous  --main-label Opa  --no-grandchildren`);
   process.exit(0);
 }
 
@@ -91,7 +96,8 @@ mainLabel = String(mainLabel || '').trim() || undefined;
 const outFile = a.out || cfg.out || `${anonymous ? 'Lebenslinien' : safeName}.mp4`;   // ohne Namen auch nicht im Dateinamen
 const t = localize(model, lang);
 const texts = { title: cfg.texts?.title || t.title, lines: cfg.texts?.lines || t.lines };
-const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : (Number(cfg.seconds) || undefined), ageLabel: t.age, anonymous, mainLabel };
+const audio = a['no-audio'] || cfg.audio === false ? undefined : (a.audio || cfg.audio || (existsSync(DEFAULT_AUDIO) ? DEFAULT_AUDIO : undefined));
+const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio, seconds: a.seconds ? +a.seconds : (Number(cfg.seconds) || undefined), ageLabel: t.age, anonymous, mainLabel };
 
 if (a.still != null) {
   const png = await render(model, { ...opt, still: ['middle', 'end'].includes(a.still) ? a.still : +a.still });

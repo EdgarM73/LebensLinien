@@ -167,7 +167,7 @@ The interface should **never** be exposed to the internet unprotected. At least 
    from two letters on, matching people from Gramps appear with birth and death year, and choosing one enters the unique Gramps ID (e.g. `I0044`). Then the **Sprache (language)** (Deutsch, English, Türkçe,
    Bosanski) and whether names are shown. With "Ohne Namen" (without names) only the relationship appears in the picture
    ("Me", "Wife", "Son" …), and neither the opening title nor the file name contains a name. In the field **Bezeichnung der Hauptperson (label of the main person)** you set what the main person is called then (e.g. "Grandpa" or "Mom"); empty means "Me".
-   Optionally upload **Hintergrundmusik (background music)** (MP3, WAV, M4A, AAC, OGG or FLAC, at most 50 MB).
+   Upload your own **Hintergrundmusik (background music)** (MP3, WAV, M4A, AAC, OGG or FLAC, at most 50 MB) or tick **Ohne Musik (no music)**. Without your own file the default music "Journey of Life" plays; it repeats if the video is longer.
 3. **02 Weitere Menschen (more people):** add friends, colleagues and other non-relatives:
    - name or Gramps ID (with an ID, name and death date come from Gramps),
    - label (e.g. "Friend"),

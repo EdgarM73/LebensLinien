@@ -76,6 +76,8 @@ const UI_EN = {
   'Hintergrundmusik': 'Background music',
   'Entfernen': 'Remove',
   'Optional · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB': 'Optional · MP3, WAV, M4A, AAC, OGG or FLAC · 50 MB at most',
+  'Ohne eigene Datei läuft die Standardmusik „Journey of Life“ · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB': 'Without your own file the default music "Journey of Life" plays · MP3, WAV, M4A, AAC, OGG or FLAC · 50 MB at most',
+  'Ohne Musik': 'No music',
   'Musik wird hochgeladen …': 'Uploading music …',
   'Upload fehlgeschlagen.': 'Upload failed.',
 

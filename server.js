@@ -310,7 +310,7 @@ function validateConfig(input, previous) {
   const secondsRaw = String(input.seconds ?? '').trim();
   const seconds = secondsRaw ? Number(secondsRaw) : null;
   if (secondsRaw && !(Number.isInteger(seconds) && seconds >= 20 && seconds <= 180)) throw new InputError('Die Dauer muss eine ganze Zahl zwischen 20 und 180 Sekunden sein (leer = automatisch).');
-  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(mainLabel ? { mainLabel } : {}), ...(input.grandchildren === false ? { grandchildren: false } : {}), ...(seconds ? { seconds } : {}), ...(texts ? { texts } : {}) };
+  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(input.noMusic === true ? { noMusic: true } : {}), ...(mainLabel ? { mainLabel } : {}), ...(input.grandchildren === false ? { grandchildren: false } : {}), ...(seconds ? { seconds } : {}), ...(texts ? { texts } : {}) };
 }
 
 // Übersetzt die Ausgabe des Generators in eine Meldung, die der Nutzer sehen darf.
@@ -343,7 +343,8 @@ function runGenerator(user, config, onProgress = () => {}, still = null) {
     writeFileSync(tmpConfig, JSON.stringify(nonSecretConfig), { mode: 0o600, flag: 'wx' });
     const args = [path.join(ROOT, 'src', 'index.js'), tmpConfig, '--out', outputPath, '--lang', config.lang];
     if (still) args.push('--still', still, '--size', '540x960');
-    if (user.audioFile && !still) {
+    if (config.noMusic && !still) args.push('--no-audio');
+    else if (user.audioFile && !still) {
       const audioPath = path.join(AUDIO_DIR, path.basename(user.audioFile));
       if (!existsSync(audioPath)) { try { unlinkSync(tmpConfig); } catch {} reject(Object.assign(new Error('Die gespeicherte Audiodatei wurde nicht gefunden.'), { stderr: 'Audiodatei' })); return; }
       args.push('--audio', audioPath);

@@ -163,7 +163,7 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
    Dieses Konto gehört nur zu Lebenslinien und hat nichts mit Gramps zu tun.
 2. **01 Gramps-Verbindung:** Server-URL (HTTPS), Gramps-Benutzername und -Passwort. **Verbindung testen** prüft die Angaben sofort und nennt die Zahl der Personen im Stammbaum. Bei der **Hauptperson** einen Namen eintippen:
    ab zwei Buchstaben erscheinen passende Personen aus Gramps mit Geburts- und Sterbejahr, die Auswahl trägt die eindeutige Gramps-ID ein (z. B. `I0044`). Dazu die **Sprache** (Deutsch, English, Türkçe, Bosanski) und ob die Namen angezeigt werden. Bei „Ohne Namen“ steht nur die Beziehung im Bild („Ich“, „Ehefrau“, „Sohn“ …), auch der Titel am Anfang und der Dateiname enthalten dann keinen Namen. Im Feld **Bezeichnung der Hauptperson** legst du fest, wie die Hauptperson dann heißt (z. B. „Opa“ oder „Mama“); leer bedeutet „Ich“.
-   Optional eine **Hintergrundmusik** hochladen (MP3, WAV, M4A, AAC, OGG oder FLAC, höchstens 50 MB).
+   Eigene **Hintergrundmusik** hochladen (MP3, WAV, M4A, AAC, OGG oder FLAC, höchstens 50 MB) oder **Ohne Musik** ankreuzen. Ohne eigene Datei läuft die Standardmusik „Journey of Life“; sie wird wiederholt, wenn das Video länger ist.
 3. **02 Weitere Menschen:** Freunde, Kollegen und andere Nicht-Verwandte hinzufügen:
    - Name oder Gramps-ID (mit ID kommen Name und Sterbedatum aus Gramps),
    - Bezeichnung (z. B. „Freund“),

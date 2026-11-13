@@ -69,7 +69,7 @@ Pro Konto werden die Gramps-Verbindung, die Hauptperson, Zusatzpersonen, Schluss
 - **Verbindung testen** prüft Adresse und Zugangsdaten sofort; die **Personensuche** findet die Hauptperson per Name.
 - **Vorschaubild** von Mitte oder Schluss in wenigen Sekunden, bevor das ganze Video entsteht.
 - Das Video entsteht **im Hintergrund** mit Fortschrittsbalken und lässt sich danach direkt abspielen und herunterladen.
-- Optionen: Videosprache, mit oder ohne Namen, Bezeichnung der Hauptperson, Enkel ein- oder ausblenden, Dauer, Musik (MP3, WAV, M4A, AAC, OGG, FLAC bis 50 MB).
+- Optionen: Videosprache, mit oder ohne Namen, Bezeichnung der Hauptperson, Enkel ein- oder ausblenden, Dauer, eigene Musik (MP3, WAV, M4A, AAC, OGG, FLAC bis 50 MB) oder ohne Musik. Ohne eigene Datei läuft die Standardmusik.
 - Konto-Dialog zum Ändern des Passworts und zum Löschen des Kontos; Oberfläche auf Deutsch oder Englisch (Umschalter DE/EN).
 
 Lokal ohne Docker (Node.js ≥ 18 und `ffmpeg` im PATH):
@@ -110,7 +110,8 @@ Bei mehreren Namenstreffern werden die Gramps-IDs aufgelistet; dann `person` auf
 | `--no-grandchildren` | ohne Enkel (`"grandchildren": false`) |
 | `--anonymous` | ohne Namen, nur Beziehungen (`"anonymous": true`) |
 | `--main-label Opa` | Bezeichnung der Hauptperson ohne Namen (`"mainLabel"`, auch je Sprache: `{"de": "Opa", "tr": "Dede"}`) |
-| `--audio musik.mp3` | Hintergrundmusik (`"audio"`) |
+| `--audio musik.mp3` | eigene Hintergrundmusik (`"audio"`); ohne Angabe läuft die Standardmusik |
+| `--no-audio` | ohne Musik (`"audio": false`) |
 | `--size 720x1280`, `--fps 30` | Bildgröße und Bildrate |
 | `--extras datei.json` | zusätzliche Wegbegleiter aus einer eigenen Datei |
 
@@ -161,3 +162,5 @@ lokal ignorierte `config_test.json` (`url`, `username`, `password`) oder in `GRA
 ## Lizenz
 
 [MIT](LICENSE)
+
+Die Standardmusik „Journey of Life“ (`assets/music/journey-of-life.mp3`) wurde mit Suno erstellt.

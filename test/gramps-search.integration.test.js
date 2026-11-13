@@ -120,13 +120,15 @@ test('Optionen Dauer und Enkel werden geprüft und gespeichert', async (context)
     assert.equal(response.status, 400, `Dauer ${seconds} muss abgelehnt werden`);
     assert.match((await response.json()).error, /zwischen 20 und 180/);
   }
-  const saved = await (await post('/api/config', { ...base, seconds: '45', grandchildren: false })).json();
+  const saved = await (await post('/api/config', { ...base, seconds: '45', grandchildren: false, noMusic: true })).json();
+  assert.equal(saved.noMusic, true, 'Ohne Musik wird gespeichert');
   assert.equal(saved.seconds, 45);
   assert.equal(saved.grandchildren, false);
 
   const defaults = await (await post('/api/config', { ...base, seconds: '', grandchildren: true })).json();
   assert.equal(defaults.seconds, undefined, 'leer bedeutet automatisch');
   assert.equal(defaults.grandchildren, undefined, 'Enkel sind standardmäßig dabei');
+  assert.equal(defaults.noMusic, undefined, 'standardmäßig läuft Musik');
 });
 
 test('Vorschaubild gegen die GrampsWeb-Testinstanz', { skip: !username || !password }, async (context) => {

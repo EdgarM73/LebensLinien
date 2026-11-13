@@ -151,7 +151,7 @@ export async function render(model, opt) {
   let ff = null;
   if (!still) {
     const args = ['-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(fps), '-i', '-'];
-    if (audio) args.push('-i', audio, '-af', `afade=t=in:d=2,afade=t=out:st=${Math.max(0, total - 3)}:d=3`, '-shortest');
+    if (audio) args.push('-stream_loop', '-1', '-i', audio, '-af', `afade=t=in:d=2,afade=t=out:st=${Math.max(0, total - 3)}:d=3`, '-shortest');
     args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-movflags', '+faststart');
     if (audio) args.push('-c:a', 'aac', '-b:a', '192k');
     args.push(out);

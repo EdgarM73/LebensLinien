@@ -79,7 +79,7 @@ function readConfig() {
   }).filter((item) => item.name || item.id || item.start || item.end || item.rel);
   return {
     url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', mainLabel: configForm.elements.mainLabel.value.trim(),
-    grandchildren: data.get('grandchildren') !== 'hide', seconds: configForm.elements.seconds.value.trim(), extras,
+    grandchildren: data.get('grandchildren') !== 'hide', noMusic: configForm.elements.noMusic.checked, seconds: configForm.elements.seconds.value.trim(), extras,
     texts: {
       title: document.querySelector('#ending-title').value,
       lines: [document.querySelector('#ending-line-1').value, document.querySelector('#ending-line-2').value],
@@ -100,6 +100,7 @@ function showConfig(config, defaults) {
   configForm.elements.names.value = config.anonymous ? 'hide' : 'show';
   configForm.elements.mainLabel.value = config.mainLabel || '';
   configForm.elements.grandchildren.value = config.grandchildren === false ? 'hide' : 'show';
+  configForm.elements.noMusic.checked = config.noMusic === true;
   configForm.elements.seconds.value = config.seconds || '';
   updateMainLabel();
   setSuggestedTexts(defaults);
@@ -197,7 +198,7 @@ function showAudio(name) {
   audioInput.value = '';
   document.querySelector('#audio-status').textContent = name
     ? `Gespeichert: ${name}`
-    : 'Optional · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB';
+    : 'Ohne eigene Datei läuft die Standardmusik „Journey of Life“ · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB';
   document.querySelector('#audio-remove').hidden = !name;
 }
 

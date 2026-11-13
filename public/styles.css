@@ -113,6 +113,8 @@ input::placeholder { color: #a0aaa1; }
 .result-note { color: var(--muted); font-size: 12px; }
 .audio-upload { display: grid; gap: 8px; }
 .audio-upload > label { font-size: 12px; }
+.checkbox-label { flex-direction: row; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.checkbox-label input { width: 16px; height: 16px; margin: 0; accent-color: #557c57; }
 .audio-control { display: flex; align-items: center; gap: 10px; }
 .audio-control input { height: auto; min-height: 42px; padding: 8px; font-size: 12px; }
 .button-audio-remove { flex: 0 0 auto; min-height: 38px; padding: 0 10px; border: 1px solid #b9c0b6; border-radius: 3px; background: transparent; cursor: pointer; font-size: 12px; }

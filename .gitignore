@@ -9,3 +9,4 @@ komodo.env
 .env
 komodo.env
 promo/
+!assets/music/*.mp3
