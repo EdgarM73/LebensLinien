@@ -18,6 +18,7 @@ const PALETTE = ['#ff6b7a', '#5aa9ff', '#4fe0a6', '#c58bff', '#ffa85c', '#4de1ee
 const GOLD = '#ffc857';
 const RESERVE = 10 / 12;   // Jahre: so lange vor einer Geburt wird der Platz der neuen Linie schon freigehalten
 const LEAD = 2;   // Jahre vor der Geburt, ab denen die Zeitleiste läuft (wie in timeline.js)
+const COUPLE_GAP = 0.7;   // zusätzlicher Abstand um ein Paar, in Bahnbreiten
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const ease = (x) => { x = clamp01(x); return x * x * (3 - 2 * x); };
 const frac = (x) => x - Math.floor(x);
@@ -76,6 +77,28 @@ export async function render(model, opt) {
   // Nähe zur Hauptperson: Kinder, Partner, Eltern/Enkel, Geschwister, dann der Rest (Großeltern, Freunde …)
   const tier = (m) => (m.group === 4 ? 0 : m.group === 3 ? 1 : m.group === 1 || m.group === 5 ? 2 : m.group === 2 ? 3 : 4);
   const byCloseness = (a, b) => tier(a) - tier(b) || a.group - b.group || a.start - b.start;
+  // Ehepartner eines Nachkommen direkt neben (außen an) seinen Partner setzen, statt ganz nach außen
+  const pairUp = (list) => {
+    const out = list.filter((m) => !(m.partnerOf && list.some((p) => p.id === m.partnerOf)));
+    for (const m of list) {
+      if (!m.partnerOf) continue;
+      const at = out.findIndex((p) => p.id === m.partnerOf);
+      if (at >= 0) out.splice(at + 1, 0, m);
+    }
+    return out;
+  };
+  // Paar-Kennung je Bahn: die Hauptperson mit ihrem aktuellen Ehepartner, ein Nachkomme mit seinem Ehepartner
+  const coupleIds = (lanes) => {
+    const ids = new Map();
+    const spouse = lanes.find((m) => m.group === 3 && !m.isMe);
+    if (spouse) { ids.set(me, 'me'); ids.set(spouse, 'me'); }
+    for (const m of lanes) {
+      if (!m.partnerOf) continue;
+      const partner = lanes.find((p) => p.id === m.partnerOf);
+      if (partner && partner.leftSide === m.leftSide) { ids.set(m, m.partnerOf); ids.set(partner, m.partnerOf); }
+    }
+    return ids;
+  };
 
   // ---- Sternenpositionen oben (deterministisch, ohne Überlappung)
   const starSpots = [];
@@ -169,12 +192,25 @@ export async function render(model, opt) {
     // Die Hauptperson bleibt immer in der Bildmitte; Eltern, Geschwister und Großeltern links,
     // Kinder, Enkel und Partner rechts, Freunde abwechselnd außen; je Seite nach Nähe (siehe tier) sortiert.
     const mid = W / 2;
-    const left = lanes.filter((m) => !m.isMe && m.leftSide).sort(byCloseness);
-    const right = lanes.filter((m) => !m.isMe && !m.leftSide).sort(byCloseness);
-    const spacing = Math.min(170 * S, (W / 2 - 150 * S) / Math.max(1, left.length, right.length));
+    const left = pairUp(lanes.filter((m) => !m.isMe && m.leftSide).sort(byCloseness));
+    const right = pairUp(lanes.filter((m) => !m.isMe && !m.leftSide).sort(byCloseness));
+    // Paare (Hauptperson + Ehepartner, Kind + Schwiegerkind) bekommen etwas mehr Abstand zu ihren Nachbarn:
+    // zwischen zwei Nachbarn liegt eine Lücke, wenn mindestens einer zu einem Paar gehört und sie nicht dasselbe Paar sind.
+    const couple = coupleIds(lanes);
+    const offsets = (list) => {
+      const out = []; let pos = 0, prev = me;
+      for (const m of list) {
+        const a = couple.get(prev), b = couple.get(m);
+        pos += 1 + ((a || b) && a !== b ? COUPLE_GAP : 0);
+        out.push(pos); prev = m;
+      }
+      return out;
+    };
+    const offL = offsets(left), offR = offsets(right);
+    const spacing = Math.min(170 * S, (W / 2 - 150 * S) / Math.max(1, offL.at(-1) || 0, offR.at(-1) || 0));
     me.target = mid;
-    left.forEach((m, i) => { m.target = mid - (i + 1) * spacing; m.side = -1; m.stag = i % 2; });
-    right.forEach((m, i) => { m.target = mid + (i + 1) * spacing; m.side = 1; m.stag = i % 2; });
+    left.forEach((m, i) => { m.target = mid - offL[i] * spacing; m.side = -1; m.stag = i % 2; });
+    right.forEach((m, i) => { m.target = mid + offR[i] * spacing; m.side = 1; m.stag = i % 2; });
     me.stag = 0;
     const tight = spacing < 125 * S;   // enge Bahnen: Beschriftung abwechselnd höher setzen
     for (const m of all) {

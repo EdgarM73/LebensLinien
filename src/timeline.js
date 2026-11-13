@@ -85,7 +85,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
 
   const members = new Map();
   const warnings = [];
-  const add = (handle, group, rel, startRaw, { endOverride, exit, needStart, side } = {}) => {
+  const add = (handle, group, rel, startRaw, { endOverride, exit, needStart, side, partnerOf } = {}) => {
     if (members.has(handle) || handle === rootHandle || !people.has(handle)) return;
     const birth = birthOf(handle);
     const death = deathOf(handle);
@@ -101,7 +101,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
     if (end != null && end <= bP - LEAD) return;   // starb vor Beginn der Zeitleiste
     if (start > endT) return;                       // kam erst nach Ende hinzu
     if (end != null && end > endT) end = null;      // bleibt bis zum Schluss
-    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP - LEAD), end, exit: end == null ? null : ex, initial: start <= bP - LEAD, birth: startRaw == null && birth != null && start > bP - LEAD, side });   // birth: Linie entsteht mit der Geburt
+    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP - LEAD), end, exit: end == null ? null : ex, initial: start <= bP - LEAD, birth: startRaw == null && birth != null && start > bP - LEAD, side, ...(partnerOf ? { partnerOf } : {}) });   // birth: Linie entsteht mit der Geburt; partnerOf: Ehepartner eines Nachkommen
   };
 
   // Seiten (-1 links, +1 rechts): Vater links, Mutter rechts; Großeltern auf der Seite ihres Kindes;
@@ -160,7 +160,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
         const divorced = famEvents(f, 'Divorce')[0];
         const kidBirths = (f.child_ref_list || []).map((r) => birthOf(r.ref)).filter((y) => y != null);
         const key = m.group === 4 ? g3(genderOf(people.get(sh)), 'sonInLaw', 'daughterInLaw', 'partner') : 'partner';
-        add(sh, 7, key, married ?? (kidBirths.length ? Math.min(...kidBirths) - 1 : null), { needStart: true, side: m.side, ...(divorced != null ? { endOverride: divorced, exit: 'drift' } : {}) });
+        add(sh, 7, key, married ?? (kidBirths.length ? Math.min(...kidBirths) - 1 : null), { needStart: true, side: m.side, partnerOf: h, ...(divorced != null ? { endOverride: divorced, exit: 'drift' } : {}) });
       }
     }
   }
