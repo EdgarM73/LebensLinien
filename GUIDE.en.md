@@ -63,11 +63,20 @@ Note: the web interface and its messages are in German. This guide gives the Ger
    openssl rand -base64 24
    ```
 
-4. Build and start:
+4. Start it, either with the **ready-made image** from the GitHub Container Registry (`ghcr.io/edgarm73/lebenslinien`, for amd64 and arm64):
+
+   ```bash
+   docker compose pull
+   docker compose up -d
+   ```
+
+   or **build it yourself** (e.g. for your own version of the code):
 
    ```bash
    docker compose up --build -d
    ```
+
+   Instead of `latest` you can pin a version in `compose.yaml`, e.g. `ghcr.io/edgarm73/lebenslinien:2026.11.01`.
 
 5. Open `http://127.0.0.1:3000` in the browser (port: see `PORT` in `.env`).
 
@@ -89,7 +98,8 @@ Note: the web interface and its messages are in German. This guide gives the Ger
 ```bash
 docker compose logs -f          # follow the log
 docker compose restart          # restart
-docker compose up --build -d    # rebuild after an update (new code)
+docker compose pull && docker compose up -d   # after an update: fetch the new ready-made image
+docker compose up --build -d    # or rebuild yourself
 docker compose down             # stop, data is kept
 ```
 

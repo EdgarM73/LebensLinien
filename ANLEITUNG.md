@@ -61,11 +61,20 @@ Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommando
    openssl rand -base64 24
    ```
 
-4. Bauen und starten:
+4. Starten, entweder mit dem **fertigen Image** aus der GitHub Container Registry (`ghcr.io/edgarm73/lebenslinien`, für amd64 und arm64):
+
+   ```bash
+   docker compose pull
+   docker compose up -d
+   ```
+
+   oder **selbst bauen** (z. B. für einen eigenen Stand des Codes):
 
    ```bash
    docker compose up --build -d
    ```
+
+   Statt `latest` lässt sich in `compose.yaml` auch eine feste Version eintragen, z. B. `ghcr.io/edgarm73/lebenslinien:2026.11.01`.
 
 5. Im Browser `http://127.0.0.1:3000` öffnen (Port siehe `PORT` in `.env`).
 
@@ -87,7 +96,8 @@ Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommando
 ```bash
 docker compose logs -f          # Protokoll ansehen
 docker compose restart          # neu starten
-docker compose up --build -d    # nach einem Update (neuer Code) neu bauen
+docker compose pull && docker compose up -d   # nach einem Update: neues fertiges Image holen
+docker compose up --build -d    # oder selbst neu bauen
 docker compose down             # stoppen, Daten bleiben erhalten
 ```
 
