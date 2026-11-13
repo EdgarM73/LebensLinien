@@ -19,12 +19,12 @@ async function freePort() {
   return port;
 }
 
-async function startServer(context, dataDir) {
+async function startServer(context, dataDir, env = {}) {
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, [serverFile], {
     cwd: root,
-    env: { ...process.env, APP_DATA_DIR: dataDir, PORT: String(port), HOST: '127.0.0.1', APP_REGISTRATION_KEY: '', APP_VIDEO_RETENTION_DAYS: '' },
+    env: { ...process.env, APP_DATA_DIR: dataDir, PORT: String(port), HOST: '127.0.0.1', APP_REGISTRATION_KEY: '', APP_VIDEO_RETENTION_DAYS: '', ...env },
     stdio: 'ignore',
   });
   context.after(async () => {
@@ -121,4 +121,24 @@ test('jede englische Servermeldung gehört zu einem deutschen Text im Server', (
   assert.equal(translateMessage('Mehrere Personen passen zur Hauptperson. Bitte die Gramps-ID eintragen: I0024 Thomas Huber', 'en'),
     'Several people match the main person. Please enter the Gramps ID: I0024 Thomas Huber');
   assert.equal(translateMessage('Unbekannter Text', 'en'), 'Unbekannter Text', 'ohne Eintrag bleibt der deutsche Text');
+});
+
+test('mit APP_VIDEO_RETENTION_DAYS werden alte Videos gelöscht, neuere bleiben', async (context) => {
+  const dataDir = mkdtempSync(path.join(os.tmpdir(), 'lebenslinien-account-'));
+  mkdirSync(path.join(dataDir, 'videos'), { recursive: true });
+  const user = (id, video) => ({ id, username: id, salt: 'AAAA', passwordHash: 'AAAA', config: null, lastVideo: video, lastVideoName: 'Name' });
+  writeFileSync(path.join(dataDir, 'users.json'), JSON.stringify([user('alt', 'alt-1.mp4'), user('neu', 'neu-1.mp4')]));
+  const oldVideo = path.join(dataDir, 'videos', 'alt-1.mp4');
+  const newVideo = path.join(dataDir, 'videos', 'neu-1.mp4');
+  writeFileSync(oldVideo, 'x');
+  writeFileSync(newVideo, 'x');
+  const threeDaysAgo = new Date(Date.now() - 3 * 86400000);
+  utimesSync(oldVideo, threeDaysAgo, threeDaysAgo);
+
+  await startServer(context, dataDir, { APP_VIDEO_RETENTION_DAYS: '2' });
+  assert.equal(existsSync(oldVideo), false, 'das drei Tage alte Video ist gelöscht');
+  assert.equal(existsSync(newVideo), true, 'das neue Video bleibt');
+  const users = JSON.parse(readFileSync(path.join(dataDir, 'users.json'), 'utf8'));
+  assert.equal(users.find((item) => item.id === 'alt').lastVideo, null, 'das Konto verweist nicht mehr auf das gelöschte Video');
+  assert.equal(users.find((item) => item.id === 'neu').lastVideo, 'neu-1.mp4');
 });

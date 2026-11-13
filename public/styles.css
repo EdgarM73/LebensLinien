@@ -40,7 +40,7 @@ button { color: inherit; }
 .dialog-form .success-message { margin: 0; }
 .danger-zone { padding-bottom: 0; border-top: 1px solid var(--line); }
 .danger-zone > p:not(.form-error) { color: var(--muted); }
-.button-danger { min-height: 42px; padding: 0 16px; border: 1px solid #a5382a; border-radius: 3px; background: transparent; color: #a5382a; font-weight: 600; }
+.button.button-danger { min-height: 42px; padding: 0 16px; border: 1px solid #a5382a; border-radius: 3px; background: transparent; color: #a5382a; font-weight: 600; }
 .button-danger:hover:not(:disabled) { background: #a5382a; color: var(--white); }
 .button-danger:disabled, .button-secondary:disabled { cursor: not-allowed; opacity: .5; }
 .user-label { color: var(--muted); }

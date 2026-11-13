@@ -80,6 +80,7 @@ Note: the web interface and its messages are in German. This guide gives the Ger
 | `PORT` | Port on the host | `3000` |
 | `COOKIE_SECURE` | `true` as soon as the site is served over HTTPS | `false` |
 | `APP_TRUSTED_PROXIES` | Number of your own reverse proxies in front of the app. With `1` the sign-in rate limit counts per visitor instead of per proxy. Leave at `0` without a proxy, otherwise the limit could be bypassed. | `0` |
+| `APP_VIDEO_RETENTION_DAYS` | Delete videos and preview images after this many days. With `0` the latest video of each account stays until a new one is created. Files without an account are always cleaned up. | `0` |
 | `APP_ALLOWED_GRAMPS_HOSTS` | Allowed Gramps host names, comma-separated (e.g. `gramps.example.org`) | empty = all |
 | `APP_KEY` | Your own encryption key (Base64, 32 bytes): `openssl rand -base64 32` | generated automatically |
 
@@ -166,6 +167,8 @@ The interface should **never** be exposed to the internet unprotected. At least 
 5. **Options:** in section 01 you can hide the **Enkel (grandchildren)** and set the **Dauer in Sekunden (duration in seconds)** (20 to 180, empty = automatic; the ending adds 11 seconds).
 6. **Vorschaubild (preview image):** the buttons **Mitte (middle)** and **Schluss (ending)** create a single image within seconds, so you can check names and the closing text before rendering the whole video.
 7. **Video erstellen (create video).** Changed input is saved automatically first. A bar shows the progress; after one to two minutes the preview and the download appear. Per account the **latest** video is kept.
+8. **Account:** via **Konto (Account)** in the header you change your password (other devices are signed out) or delete the account with all settings, the music and the video.
+9. **Interface language:** the **DE / EN** switch in the header shows the page in German or English. Without a choice the browser language applies, so with an English browser the labels quoted in this guide appear in English. The language of the video is chosen separately in section 01.
 
 The Gramps password is stored encrypted (AES-256-GCM); account passwords only as scrypt hashes.
 

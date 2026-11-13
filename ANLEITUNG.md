@@ -78,6 +78,7 @@ Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommando
 | `PORT` | Port auf dem Host | `3000` |
 | `COOKIE_SECURE` | `true`, sobald die Seite über HTTPS ausgeliefert wird | `false` |
 | `APP_TRUSTED_PROXIES` | Anzahl der eigenen Reverse Proxys vor der App. Mit `1` zählt die Anmeldebegrenzung je Besucher statt je Proxy. Ohne Proxy bei `0` lassen, sonst ließe sich die Sperre umgehen. | `0` |
+| `APP_VIDEO_RETENTION_DAYS` | Videos und Vorschaubilder nach so vielen Tagen löschen. Mit `0` bleibt das letzte Video jedes Kontos liegen, bis ein neues entsteht. Dateien ohne Konto werden immer aufgeräumt. | `0` |
 | `APP_ALLOWED_GRAMPS_HOSTS` | Erlaubte Gramps-Hostnamen, kommagetrennt (z. B. `gramps.example.org`) | leer = alle |
 | `APP_KEY` | Eigener Verschlüsselungsschlüssel (Base64, 32 Byte): `openssl rand -base64 32` | wird automatisch erzeugt |
 
@@ -162,6 +163,8 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
 5. **Optionen:** Im Abschnitt 01 lassen sich die **Enkel** ausblenden und die **Dauer in Sekunden** festlegen (20 bis 180, leer = automatisch; dazu kommen 11 Sekunden Schluss).
 6. **Vorschaubild:** Die Knöpfe **Mitte** und **Schluss** erzeugen in wenigen Sekunden ein einzelnes Bild. So lassen sich Namen und Schlusstext prüfen, bevor das ganze Video entsteht.
 7. **Video erstellen.** Geänderte Eingaben werden vorher automatisch gespeichert. Ein Balken zeigt den Fortschritt, nach ein bis zwei Minuten erscheinen Vorschau und Download. Pro Konto wird das jeweils **letzte** Video aufbewahrt.
+8. **Konto:** Über **Konto** in der Kopfzeile änderst du dein Passwort (andere Geräte werden dabei abgemeldet) oder löschst das Konto mit allen Einstellungen, der Musik und dem Video.
+9. **Sprache der Oberfläche:** Der Umschalter **DE / EN** in der Kopfzeile stellt die Seite auf Deutsch oder Englisch. Ohne Auswahl gilt die Sprache des Browsers. Die Sprache des Videos wählst du getrennt im Abschnitt 01.
 
 Das Passwort für Gramps wird verschlüsselt (AES-256-GCM) gespeichert, die Kontopasswörter nur als scrypt-Hash.
 
