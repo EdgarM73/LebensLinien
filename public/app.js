@@ -250,6 +250,124 @@ configForm.elements.lang.addEventListener('change', async () => {
   } catch (error) { showError(document.querySelector('#config-error'), error.message); }
 });
 
+// Zugangsdaten aus dem Formular; ein leeres Passwort heißt: das gespeicherte verwenden
+function grampsFields() {
+  return { url: configForm.elements.url.value.trim(), username: configForm.elements.username.value.trim(), password: configForm.elements.password.value };
+}
+
+document.querySelector('#test-button').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  const status = document.querySelector('#test-status');
+  button.disabled = true;
+  status.className = 'test-status';
+  status.textContent = 'Verbindung wird geprüft …';
+  try {
+    const result = await request('/api/gramps/test', { method: 'POST', body: JSON.stringify(grampsFields()) });
+    status.classList.add('test-ok');
+    status.textContent = `Verbindung steht. ${result.people} ${result.people === 1 ? 'Person' : 'Personen'} im Stammbaum.`;
+  } catch (error) {
+    status.classList.add('test-error');
+    status.textContent = error.message;
+  } finally { button.disabled = false; }
+});
+
+// Personensuche für die Hauptperson
+const personInput = document.querySelector('#person-input');
+const personResults = document.querySelector('#person-results');
+const personHint = document.querySelector('#person-hint');
+const personHintDefault = personHint.textContent;
+let searchTimer = null;
+let searchRun = 0;
+let activeResult = -1;
+
+function closeResults() {
+  personResults.hidden = true;
+  personResults.replaceChildren();
+  personInput.setAttribute('aria-expanded', 'false');
+  personInput.removeAttribute('aria-activedescendant');
+  activeResult = -1;
+}
+
+function lifeDates(person) {
+  return [person.birth ? `* ${person.birth}` : '', person.death ? `† ${person.death}` : ''].filter(Boolean).join('  ');
+}
+
+function choosePerson(person) {
+  personInput.value = person.id;
+  personHint.textContent = `Ausgewählt: ${person.name || person.id}${lifeDates(person) ? ` (${lifeDates(person)})` : ''}`;
+  closeResults();
+}
+
+function setActiveResult(index) {
+  const items = [...personResults.querySelectorAll('[role="option"]')];
+  if (!items.length) return;
+  activeResult = (index + items.length) % items.length;
+  items.forEach((item, i) => item.setAttribute('aria-selected', String(i === activeResult)));
+  personInput.setAttribute('aria-activedescendant', items[activeResult].id);
+  items[activeResult].scrollIntoView({ block: 'nearest' });
+}
+
+function showResults(result, note) {
+  personResults.replaceChildren();
+  activeResult = -1;
+  for (const [index, person] of (result?.people || []).entries()) {
+    const item = document.createElement('li');
+    item.id = `person-result-${index}`;
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', 'false');
+    const name = document.createElement('span');
+    name.className = 'result-name';
+    name.textContent = person.name || '(ohne Namen)';
+    const dates = document.createElement('span');
+    dates.className = 'result-dates';
+    dates.textContent = lifeDates(person);
+    const id = document.createElement('span');
+    id.className = 'result-id';
+    id.textContent = person.id;
+    item.append(name, dates, id);
+    // mousedown statt click: der Klick soll wirken, bevor das Eingabefeld den Fokus verliert
+    item.addEventListener('mousedown', (event) => { event.preventDefault(); choosePerson(person); });
+    personResults.append(item);
+  }
+  const message = note || (result && !result.people.length ? 'Keine passende Person gefunden.' : result && result.total > result.people.length ? `${result.total} Treffer, die ersten ${result.people.length} werden gezeigt. Bitte genauer eingeben.` : '');
+  if (message) {
+    const info = document.createElement('li');
+    info.className = 'result-note';
+    info.textContent = message;
+    personResults.append(info);
+  }
+  personResults.hidden = false;
+  personInput.setAttribute('aria-expanded', 'true');
+}
+
+personInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  personHint.textContent = personHintDefault;
+  const q = personInput.value.trim();
+  if (q.length < 2) { closeResults(); return; }
+  searchTimer = setTimeout(async () => {
+    const run = ++searchRun;
+    const access = grampsFields();
+    if (!access.url || !access.username) { showResults(null, 'Für die Suche zuerst Server-URL, Benutzername und Passwort eintragen.'); return; }
+    if (personResults.hidden) showResults(null, 'Suche in Gramps …');
+    try {
+      const result = await request('/api/gramps/people', { method: 'POST', body: JSON.stringify({ ...access, q }) });
+      if (run === searchRun) showResults(result);
+    } catch (error) {
+      if (run === searchRun) showResults(null, error.message);
+    }
+  }, 300);
+});
+
+personInput.addEventListener('keydown', (event) => {
+  if (personResults.hidden) return;
+  if (event.key === 'ArrowDown') { event.preventDefault(); setActiveResult(activeResult + 1); }
+  else if (event.key === 'ArrowUp') { event.preventDefault(); setActiveResult(activeResult - 1); }
+  else if (event.key === 'Enter' && activeResult >= 0) { event.preventDefault(); personResults.querySelectorAll('[role="option"]')[activeResult].dispatchEvent(new MouseEvent('mousedown', { cancelable: true })); }
+  else if (event.key === 'Escape') closeResults();
+});
+personInput.addEventListener('blur', () => { searchRun++; clearTimeout(searchTimer); closeResults(); });
+
 audioInput.addEventListener('change', async () => {
   const file = audioInput.files[0];
   if (!file) return;

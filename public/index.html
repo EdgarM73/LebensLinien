@@ -55,7 +55,13 @@
               <label class="field-wide">Server-URL<input name="url" type="url" placeholder="https://gramps.example.org" required></label>
               <label>Benutzername<input name="username" autocomplete="username" required></label>
               <label>Passwort<input name="password" type="password" autocomplete="new-password" placeholder="Passwort eingeben"><small id="password-hint">Wird verschlüsselt gespeichert.</small></label>
-              <label class="field-wide">Hauptperson<input name="person" placeholder="Gramps-ID oder Name" required><small>Eine Gramps-ID ist eindeutig, z. B. I0044.</small></label>
+              <div class="field-wide connection-test"><button class="button button-secondary" id="test-button" type="button">Verbindung testen</button><span class="test-status" id="test-status" role="status" aria-live="polite"></span></div>
+              <div class="field-wide person-search">
+                <label for="person-input">Hauptperson</label>
+                <input id="person-input" name="person" placeholder="Name eintippen oder Gramps-ID" required autocomplete="off" role="combobox" aria-expanded="false" aria-controls="person-results" aria-autocomplete="list">
+                <ul class="person-results" id="person-results" role="listbox" aria-label="Gefundene Personen" hidden></ul>
+                <small id="person-hint">Ab zwei Buchstaben erscheinen passende Personen aus Gramps. Eine Gramps-ID ist eindeutig, z. B. I0044.</small>
+              </div>
               <label>Sprache<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
               <label>Namen<select name="names"><option value="show">Mit Namen</option><option value="hide">Ohne Namen (Ich, Ehefrau, Sohn …)</option></select></label>
               <label id="main-label-field" hidden>Bezeichnung der Hauptperson<input name="mainLabel" maxlength="40" placeholder="z. B. Opa, Mama, Ich"><small>Leer = „Ich“.</small></label>

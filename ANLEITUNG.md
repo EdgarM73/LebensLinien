@@ -150,8 +150,8 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
 
 1. **Registrieren** (beim ersten Mal): Benutzername (3 bis 40 Zeichen), Passwort (mindestens 8 Zeichen) und den Einladungscode eingeben.
    Dieses Konto gehört nur zu Lebenslinien und hat nichts mit Gramps zu tun.
-2. **01 Gramps-Verbindung:** Server-URL (HTTPS), Gramps-Benutzername und -Passwort, **Hauptperson** (am besten die Gramps-ID, z. B. `I0044`;
-   bei einem Namen mit mehreren Treffern wird abgebrochen), die **Sprache** (Deutsch, English, Türkçe, Bosanski) und ob die Namen angezeigt werden. Bei „Ohne Namen“ steht nur die Beziehung im Bild („Ich“, „Ehefrau“, „Sohn“ …), auch der Titel am Anfang und der Dateiname enthalten dann keinen Namen. Im Feld **Bezeichnung der Hauptperson** legst du fest, wie die Hauptperson dann heißt (z. B. „Opa“ oder „Mama“); leer bedeutet „Ich“.
+2. **01 Gramps-Verbindung:** Server-URL (HTTPS), Gramps-Benutzername und -Passwort. **Verbindung testen** prüft die Angaben sofort und nennt die Zahl der Personen im Stammbaum. Bei der **Hauptperson** einen Namen eintippen:
+   ab zwei Buchstaben erscheinen passende Personen aus Gramps mit Geburts- und Sterbejahr, die Auswahl trägt die eindeutige Gramps-ID ein (z. B. `I0044`). Dazu die **Sprache** (Deutsch, English, Türkçe, Bosanski) und ob die Namen angezeigt werden. Bei „Ohne Namen“ steht nur die Beziehung im Bild („Ich“, „Ehefrau“, „Sohn“ …), auch der Titel am Anfang und der Dateiname enthalten dann keinen Namen. Im Feld **Bezeichnung der Hauptperson** legst du fest, wie die Hauptperson dann heißt (z. B. „Opa“ oder „Mama“); leer bedeutet „Ich“.
    Optional eine **Hintergrundmusik** hochladen (MP3, WAV, M4A, AAC, OGG oder FLAC, höchstens 50 MB).
 3. **02 Weitere Menschen:** Freunde, Kollegen und andere Nicht-Verwandte hinzufügen:
    - Name oder Gramps-ID (mit ID kommen Name und Sterbedatum aus Gramps),
@@ -177,7 +177,7 @@ nach 20 falschen Anmelde-Versuchen innerhalb von 15 Minuten wird eine IP gesperr
 |---|---|
 | `docker compose` meldet „Set APP_REGISTRATION_KEY in .env“ | `.env` fehlt oder der Code ist leer. Schritt 2 und 3 aus Abschnitt 2 ausführen. |
 | „Für Gramps-Verbindungen ist HTTPS erforderlich“ | Eine HTTPS-Adresse eintragen (z. B. über deinen Reverse Proxy). `http://` geht nur für `localhost`. |
-| „Dieser Gramps-Server ist nicht freigegeben“ | Der Hostname steht nicht in `APP_ALLOWED_GRAMPS_HOSTS`. |
+| „Der Gramps-Server … ist auf diesem Server nicht freigegeben“ | Der genannte Hostname steht nicht in `APP_ALLOWED_GRAMPS_HOSTS`. Dort eintragen (ohne `https://` und Port) und neu deployen. |
 | `ECONNREFUSED` oder „fetch failed“ | Gramps ist von diesem Rechner/Container aus nicht erreichbar. Interne Docker-IPs funktionieren nicht, nimm die öffentliche Adresse. Im Container zeigt `localhost` auf den Container selbst. |
 | „Videoerzeugung fehlgeschlagen“ | Zugangsdaten, URL und Hauptperson prüfen. Die Weboberfläche nennt bekannte Ursachen direkt (Person nicht gefunden, Anmeldung bei Gramps fehlgeschlagen, Server nicht erreichbar). Bei allem anderen stehen die Details im Protokoll (`docker compose logs`). |
 | „Mehrere Treffer“ / „Niemand gefunden“ | Bei der Hauptperson die Gramps-ID statt des Namens eintragen. |

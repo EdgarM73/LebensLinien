@@ -152,8 +152,8 @@ The interface should **never** be exposed to the internet unprotected. At least 
 
 1. **Register** (first time): enter a user name (3 to 40 characters), a password (at least 8 characters) and the invitation code.
    This account belongs to Lebenslinien only and has nothing to do with Gramps.
-2. **01 Gramps-Verbindung (Gramps connection):** server URL (HTTPS), Gramps user name and password, **Hauptperson (main person)**
-   (preferably the Gramps ID, e.g. `I0044`; a name with several matches aborts), the **Sprache (language)** (Deutsch, English, Türkçe,
+2. **01 Gramps-Verbindung (Gramps connection):** server URL (HTTPS), Gramps user name and password. **Verbindung testen (test connection)** checks them right away and shows the number of people in the tree. For the **Hauptperson (main person)** type a name:
+   from two letters on, matching people from Gramps appear with birth and death year, and choosing one enters the unique Gramps ID (e.g. `I0044`). Then the **Sprache (language)** (Deutsch, English, Türkçe,
    Bosanski) and whether names are shown. With "Ohne Namen" (without names) only the relationship appears in the picture
    ("Me", "Wife", "Son" …), and neither the opening title nor the file name contains a name. In the field **Bezeichnung der Hauptperson (label of the main person)** you set what the main person is called then (e.g. "Grandpa" or "Mom"); empty means "Me".
    Optionally upload **Hintergrundmusik (background music)** (MP3, WAV, M4A, AAC, OGG or FLAC, at most 50 MB).
@@ -182,7 +182,7 @@ after 20 failed sign-in attempts within 15 minutes an IP is blocked, sessions ex
 |---|---|
 | `docker compose` says "Set APP_REGISTRATION_KEY in .env" | `.env` is missing or the code is empty. Do steps 2 and 3 of section 2. |
 | "Für Gramps-Verbindungen ist HTTPS erforderlich" (HTTPS is required) | Enter an HTTPS address (e.g. via your reverse proxy). `http://` only works for `localhost`. |
-| "Dieser Gramps-Server ist nicht freigegeben" (server not allowed) | The host name is not listed in `APP_ALLOWED_GRAMPS_HOSTS`. |
+| "Der Gramps-Server … ist auf diesem Server nicht freigegeben" (server not allowed) | The host name mentioned is not listed in `APP_ALLOWED_GRAMPS_HOSTS`. Add it there (without `https://` and port) and redeploy. |
 | `ECONNREFUSED` or "fetch failed" | Gramps is not reachable from this machine/container. Internal Docker IPs do not work, use the public address. Inside the container `localhost` points at the container itself. |
 | "Videoerzeugung fehlgeschlagen" (video creation failed) | Check credentials, URL and main person. The web interface names known causes directly (person not found, Gramps sign-in failed, server unreachable). For anything else the details are in the log (`docker compose logs`). |
 | "Mehrere Treffer" (several matches) / "Niemand gefunden" (nobody found) | Enter the Gramps ID instead of the name for the main person. |

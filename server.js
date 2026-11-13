@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkS
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LANGS } from './src/i18n.js';
+import { grampsLogin, listPeople } from './src/gramps.js';
 import { consumePasswordReset } from './src/password-reset.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -187,15 +188,50 @@ function publicConfig(user) {
   return { ...safe, configured: true, hasPassword: Boolean(password) };
 }
 
-function validateConfig(input, previous) {
-  const url = String(input.url || '').trim().replace(/\/+$/, '');
+// Prüft die Gramps-Adresse (HTTPS, freigegebener Host) und gibt sie ohne Schrägstrich am Ende zurück.
+function validateGrampsUrl(value) {
+  const url = String(value || '').trim().replace(/\/+$/, '');
   let parsed;
   try { parsed = new URL(url); } catch { throw new InputError('Bitte eine gültige Gramps-URL angeben.'); }
   if (parsed.username || parsed.password) throw new InputError('Zugangsdaten gehören nicht in die Server-URL.');
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
   if (!['https:', ...(local ? ['http:'] : [])].includes(parsed.protocol)) throw new InputError('Für Gramps-Verbindungen ist HTTPS erforderlich (außer lokalem localhost).');
   const allowedHosts = process.env.APP_ALLOWED_GRAMPS_HOSTS?.split(',').map((host) => host.trim().toLowerCase()).filter(Boolean);
-  if (allowedHosts?.length && !allowedHosts.includes(parsed.hostname.toLowerCase())) throw new InputError('Dieser Gramps-Server ist nicht freigegeben.');
+  if (allowedHosts?.length && !allowedHosts.includes(parsed.hostname.toLowerCase())) throw new InputError(`Der Gramps-Server „${parsed.hostname}“ ist auf diesem Server nicht freigegeben (Einstellung APP_ALLOWED_GRAMPS_HOSTS).`);
+  return url;
+}
+
+// Zugangsdaten für "Verbindung testen" und die Personensuche: aus dem Formular, das gespeicherte
+// Passwort nur, wenn Adresse und Benutzer unverändert sind (es soll nie an einen anderen Server gehen).
+function grampsAccess(input, user) {
+  const url = validateGrampsUrl(input.url);
+  const username = String(input.username || '').trim();
+  const stored = decrypt(user.config);
+  const password = String(input.password || '') || (stored && stored.url === url && stored.username === username ? stored.password : '');
+  if (!username || !password) throw new InputError('Bitte Benutzername und Passwort für Gramps eintragen.');
+  if (username.length > 160 || password.length > 512) throw new InputError('Ein Eingabefeld ist zu lang.');
+  return { url, username, password };
+}
+
+// Personenliste je Konto kurz zwischenspeichern, damit die Suche beim Tippen nicht jedes Mal Gramps abfragt
+const peopleCache = new Map();   // userId -> { key, expires, people }
+async function grampsPeople(user, access) {
+  const key = `${access.url}|${access.username}|${hashToken(access.password)}`;
+  const cached = peopleCache.get(user.id);
+  if (cached && cached.key === key && cached.expires > Date.now()) return cached.people;
+  let people;
+  try {
+    people = await listPeople(access.url, await grampsLogin(access.url, access.username, access.password));
+  } catch (error) {
+    console.error(`Gramps-Abfrage für ${user.username} fehlgeschlagen:`, error.message);
+    throw new InputError(friendlyError({ stderr: `${error.message} ${error.cause?.message || ''} ${error.cause?.code || ''} ${error.name}` }, 'Die Abfrage bei Gramps ist fehlgeschlagen. Bitte Server-URL und Zugangsdaten prüfen.'));
+  }
+  peopleCache.set(user.id, { key, expires: Date.now() + 10 * 60 * 1000, people });
+  return people;
+}
+
+function validateConfig(input, previous) {
+  const url = validateGrampsUrl(input.url);
   const username = String(input.username || '').trim();
   const person = String(input.person || '').trim();
   const password = String(input.password || '') || previous?.password || '';
@@ -229,7 +265,7 @@ function validateConfig(input, previous) {
 
 // Übersetzt die Ausgabe des Generators in eine Meldung, die der Nutzer sehen darf.
 // Unbekannte Fehler bleiben allgemein, Details stehen nur im Server-Protokoll.
-function friendlyError(error) {
+function friendlyError(error, fallback = 'Das Video konnte nicht erstellt werden. Bitte Verbindung und Gramps-Daten prüfen.') {
   const text = String(error?.stderr || '');
   if (error?.timedOut) return 'Die Videoerzeugung hat das Zeitlimit von 15 Minuten überschritten.';
   if (text.includes('Niemand gefunden')) return 'Die Hauptperson wurde in Gramps nicht gefunden. Bitte Namen oder Gramps-ID prüfen.';
@@ -239,10 +275,12 @@ function friendlyError(error) {
   }
   if (text.includes('kein Geburtsjahr')) return 'Für die Hauptperson ist in Gramps kein Geburtsjahr hinterlegt. Bitte ein Geburtsereignis mit Datum anlegen.';
   if (/\/api\/token\/?: HTTP (400|401|403)/.test(text)) return 'Die Anmeldung bei Gramps ist fehlgeschlagen. Bitte Benutzername und Passwort prüfen.';
+  if (/HTTP 429/.test(text)) return 'Gramps nimmt gerade keine weiteren Anfragen an (zu viele in kurzer Zeit). Bitte einen Moment warten und erneut versuchen.';
   if (/HTTP 40[13]/.test(text)) return 'Dieser Gramps-Benutzer darf die Stammbaumdaten nicht lesen.';
-  if (/ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|fetch failed|certificate/i.test(text)) return 'Der Gramps-Server ist von hier aus nicht erreichbar. Bitte die Server-URL prüfen.';
+  if (/ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|fetch failed|certificate|TimeoutError|aborted/i.test(text)) return 'Der Gramps-Server ist von hier aus nicht erreichbar. Bitte die Server-URL prüfen.';
+  if (/HTTP 404|Unexpected token|is not valid JSON/.test(text)) return 'Unter dieser Adresse antwortet kein Gramps Web. Bitte die Server-URL prüfen.';
   if (text.includes('Audiodatei')) return 'Die gespeicherte Audiodatei wurde nicht gefunden. Bitte die Musik neu hochladen.';
-  return 'Das Video konnte nicht erstellt werden. Bitte Verbindung und Gramps-Daten prüfen.';
+  return fallback;
 }
 
 function runGenerator(user, config, onProgress = () => {}) {
@@ -395,6 +433,28 @@ const server = createServer(async (req, res) => {
       user.config = encrypt(config);
       saveUsers();
       return json(res, 200, { ...publicConfig(user), saved: true });
+    }
+    if (req.method === 'POST' && url.pathname === '/api/gramps/test') {
+      const people = await grampsPeople(user, grampsAccess(await body(req), user));
+      return json(res, 200, { ok: true, people: people.length });
+    }
+    if (req.method === 'POST' && url.pathname === '/api/gramps/people') {
+      const input = await body(req);
+      const words = String(input.q || '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
+      if (!words.join('').length) return json(res, 200, { total: 0, people: [] });
+      const people = await grampsPeople(user, grampsAccess(input, user));
+      const query = words.join(' ');
+      // Rang: exakte Gramps-ID zuerst, dann Namen, deren Wörter mit den Suchwörtern beginnen, dann der Rest
+      const rank = (person) => {
+        if (person.id.toLowerCase() === query) return 0;
+        const parts = person.name.toLowerCase().split(/\s+/);
+        return words.every((word) => parts.some((part) => part.startsWith(word))) ? 1 : 2;
+      };
+      const hits = people.filter((person) => {
+        const text = `${person.name} ${person.id}`.toLowerCase();
+        return words.every((word) => text.includes(word));
+      }).sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'de') || (a.birth || 0) - (b.birth || 0));
+      return json(res, 200, { total: hits.length, people: hits.slice(0, 20) });
     }
     if (req.method === 'POST' && url.pathname === '/api/audio') {
       if (generating.size) return json(res, 409, { error: 'Während der Videoerstellung kann die Musik nicht geändert werden.' });
