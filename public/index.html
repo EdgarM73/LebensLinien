@@ -6,13 +6,37 @@
   <meta name="theme-color" content="#172d26">
   <title>Lebenslinien | Gramps-Video</title>
   <link rel="stylesheet" href="/styles.css">
+  <script src="/i18n.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/" aria-label="Lebenslinien Startseite"><span class="brand-mark" aria-hidden="true">L</span><span>lebenslinien</span></a>
-    <div class="account-area" id="account-area" hidden><span class="user-label" id="user-label"></span><button class="button button-quiet" id="logout-button" type="button">Abmelden</button></div>
+    <div class="topbar-right">
+      <div class="lang-switch" role="group" aria-label="Sprache der Oberfläche"><button type="button" data-ui-lang="de" lang="de" aria-label="Deutsch">DE</button><button type="button" data-ui-lang="en" lang="en" aria-label="English">EN</button></div>
+      <div class="account-area" id="account-area" hidden><span class="user-label" id="user-label" translate="no"></span><button class="button button-quiet" id="account-button" type="button">Konto</button><button class="button button-quiet" id="logout-button" type="button">Abmelden</button></div>
+    </div>
   </header>
+
+  <dialog class="account-dialog" id="account-dialog" aria-labelledby="account-title">
+    <div class="dialog-head"><h2 id="account-title">Konto</h2><button class="remove-extra" id="account-close" type="button" aria-label="Schließen" title="Schließen">×</button></div>
+    <form class="dialog-form" id="password-form">
+      <h3>Passwort ändern</h3>
+      <label>Aktuelles Passwort<input name="currentPassword" type="password" autocomplete="current-password" required maxlength="256"></label>
+      <label>Neues Passwort<input name="newPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="256"><small>Mindestens 8 Zeichen. Andere Geräte werden dabei abgemeldet.</small></label>
+      <label>Passwort wiederholen<input name="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="256"></label>
+      <p class="form-error" id="password-error" role="alert" hidden></p>
+      <p class="success-message" id="password-success" role="status" hidden>Das Passwort wurde geändert.</p>
+      <button class="button button-secondary" id="password-submit" type="submit">Passwort ändern</button>
+    </form>
+    <form class="dialog-form danger-zone" id="delete-form">
+      <h3>Konto löschen</h3>
+      <p>Löscht dein Konto mit allen Einstellungen, der Musik und dem Video. Das lässt sich nicht rückgängig machen.</p>
+      <label>Passwort zur Bestätigung<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+      <p class="form-error" id="delete-error" role="alert" hidden></p>
+      <button class="button button-danger" id="delete-submit" type="submit">Konto endgültig löschen</button>
+    </form>
+  </dialog>
 
   <main>
     <section class="auth-view" id="auth-view" hidden>
@@ -62,7 +86,7 @@
                 <ul class="person-results" id="person-results" role="listbox" aria-label="Gefundene Personen" hidden></ul>
                 <small id="person-hint">Ab zwei Buchstaben erscheinen passende Personen aus Gramps. Eine Gramps-ID ist eindeutig, z. B. I0044.</small>
               </div>
-              <label>Sprache<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
+              <label>Videosprache<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
               <label>Namen<select name="names"><option value="show">Mit Namen</option><option value="hide">Ohne Namen (Ich, Ehefrau, Sohn …)</option></select></label>
               <label id="main-label-field" hidden>Bezeichnung der Hauptperson<input name="mainLabel" maxlength="40" placeholder="z. B. Opa, Mama, Ich"><small>Leer = „Ich“.</small></label>
               <label>Enkel<select name="grandchildren"><option value="show">Enkel und ihre Partner zeigen</option><option value="hide">Ohne Enkel</option></select></label>

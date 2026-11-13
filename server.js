@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LANGS } from './src/i18n.js';
 import { grampsLogin, listPeople } from './src/gramps.js';
+import { translateMessage } from './src/messages.js';
 import { consumePasswordReset } from './src/password-reset.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -74,8 +75,43 @@ if (users.some((user) => user.pendingJob)) {
   saveUsers();
 }
 
+function passwordMatches(user, password) {
+  const hash = scryptSync(password, Buffer.from(user.salt, 'base64'), 64);
+  return timingSafeEqual(hash, Buffer.from(user.passwordHash, 'base64'));
+}
+
+// Räumt Dateien auf, die zu keinem Konto mehr gehören (z. B. nach einem Absturz oder gelöschten Konten).
+// Mit APP_VIDEO_RETENTION_DAYS werden zusätzlich Videos und Vorschaubilder nach so vielen Tagen gelöscht.
+function cleanupFiles() {
+  const now = Date.now();
+  const age = (file) => { try { return now - statSync(file).mtimeMs; } catch { return 0; } };
+  const referenced = new Set(users.flatMap((user) => [user.lastVideo, user.audioFile, `${user.id}.png`]).filter(Boolean).map((name) => path.basename(name)));
+  for (const dir of [VIDEO_DIR, AUDIO_DIR, PREVIEW_DIR]) {
+    for (const name of readdirSync(dir)) {
+      // Eine Stunde Schonfrist: ein Video, das gerade entsteht, gehört noch zu keinem Konto
+      if (!referenced.has(name) && age(path.join(dir, name)) > 60 * 60 * 1000) { try { unlinkSync(path.join(dir, name)); } catch {} }
+    }
+  }
+  const days = Number(process.env.APP_VIDEO_RETENTION_DAYS || 0);
+  if (!(days > 0)) return;
+  let changed = false;
+  for (const user of users) {
+    if (user.lastVideo && !generating.has(user.id) && age(path.join(VIDEO_DIR, path.basename(user.lastVideo))) > days * 86400000) {
+      try { unlinkSync(path.join(VIDEO_DIR, path.basename(user.lastVideo))); } catch {}
+      user.lastVideo = null;
+      user.lastVideoName = null;
+      changed = true;
+    }
+    const preview = path.join(PREVIEW_DIR, `${user.id}.png`);
+    if (age(preview) > days * 86400000) { try { unlinkSync(preview); } catch {} }
+  }
+  if (changed) saveUsers();
+}
+cleanupFiles();
+
 // Abgelaufene Sitzungen und alte Zähler der Anmeldebegrenzung regelmäßig entfernen
 setInterval(() => {
+  try { cleanupFiles(); } catch (error) { console.error(error); }
   const now = Date.now();
   let changed = false;
   for (const [id, session] of sessions) if (session.expires < now) { sessions.delete(id); changed = true; }
@@ -98,6 +134,8 @@ function decrypt(value) {
 }
 
 function json(res, status, value, headers = {}) {
+  // Fehlermeldungen in der Sprache der Oberfläche senden (auch die eines Videoauftrags)
+  if (res.uiLang === 'en' && typeof value?.error === 'string') value = { ...value, error: translateMessage(value.error, 'en') };
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers });
   res.end(JSON.stringify(value));
 }
@@ -365,12 +403,13 @@ const server = createServer(async (req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  res.uiLang = req.headers['x-ui-lang'] === 'en' ? 'en' : 'de';
   try {
     if (req.method === 'GET' && url.pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
       return res.end(readFileSync(path.join(ROOT, 'public', 'index.html')));
     }
-    if (req.method === 'GET' && ['/app.js', '/styles.css'].includes(url.pathname)) {
+    if (req.method === 'GET' && ['/app.js', '/i18n.js', '/styles.css'].includes(url.pathname)) {
       const file = path.join(ROOT, 'public', url.pathname.slice(1));
       res.writeHead(200, { 'Content-Type': url.pathname.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' });
       return res.end(readFileSync(file));
@@ -442,6 +481,39 @@ const server = createServer(async (req, res) => {
       user.config = encrypt(config);
       saveUsers();
       return json(res, 200, { ...publicConfig(user), saved: true });
+    }
+    if (req.method === 'POST' && url.pathname === '/api/account/password') {
+      if (rateBlocked(req, 'account')) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
+      const input = await body(req);
+      const next = String(input.newPassword || '');
+      if (!passwordMatches(user, String(input.currentPassword || ''))) { rateHit(req, 'account'); return json(res, 403, { error: 'Das aktuelle Passwort stimmt nicht.' }); }
+      if (next.length < 8 || next.length > 256) return json(res, 400, { error: 'Das Passwort muss 8–256 Zeichen lang sein.' });
+      const salt = randomBytes(16);
+      user.salt = salt.toString('base64');
+      user.passwordHash = scryptSync(next, salt, 64).toString('base64');
+      saveUsers();
+      // Alle anderen Sitzungen dieses Kontos beenden, die aktuelle bleibt angemeldet
+      const current = hashToken(cookie(req, 'lebenslinien_session'));
+      for (const [id, session] of sessions) if (session.userId === user.id && id !== current) sessions.delete(id);
+      saveSessions();
+      return json(res, 200, { ok: true });
+    }
+    if (req.method === 'DELETE' && url.pathname === '/api/account') {
+      if (rateBlocked(req, 'account')) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
+      const input = await body(req);
+      if (!passwordMatches(user, String(input.password || ''))) { rateHit(req, 'account'); return json(res, 403, { error: 'Das aktuelle Passwort stimmt nicht.' }); }
+      if (generating.has(user.id) || previewing.has(user.id)) return json(res, 409, { error: 'Gerade wird ein Video oder Vorschaubild erstellt. Bitte danach erneut versuchen.' });
+      // Alles löschen, was zu diesem Konto gehört: Video, Musik, Vorschaubild, Einstellungen, Sitzungen
+      for (const file of [user.lastVideo && path.join(VIDEO_DIR, path.basename(user.lastVideo)), user.audioFile && path.join(AUDIO_DIR, path.basename(user.audioFile)), path.join(PREVIEW_DIR, `${user.id}.png`)]) {
+        if (file) { try { unlinkSync(file); } catch {} }
+      }
+      users = users.filter((item) => item.id !== user.id);
+      saveUsers();
+      for (const [id, session] of sessions) if (session.userId === user.id) sessions.delete(id);
+      saveSessions();
+      jobs.delete(user.id);
+      peopleCache.delete(user.id);
+      return json(res, 200, { ok: true }, { 'Set-Cookie': 'lebenslinien_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
     }
     if (req.method === 'POST' && url.pathname === '/api/gramps/test') {
       const people = await grampsPeople(user, grampsAccess(await body(req), user));

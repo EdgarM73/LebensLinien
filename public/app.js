@@ -10,7 +10,8 @@ let savedSnapshot = '';
 let previousVideo = false;   // gab es vor dem aktuellen Auftrag schon ein Video?
 
 async function request(path, options = {}) {
-  const response = await fetch(path, { ...options, headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers } });
+  // X-UI-Lang: der Server antwortet mit Meldungen in der Sprache der Oberfläche
+  const response = await fetch(path, { ...options, headers: { 'X-UI-Lang': uiLang, ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers } });
   const data = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
   if (!response.ok) throw new Error(data?.error || `Anfrage fehlgeschlagen (${response.status}).`);
   return data;
@@ -318,9 +319,10 @@ function showResults(result, note) {
     item.id = `person-result-${index}`;
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', 'false');
+    item.setAttribute('translate', 'no');   // Namen aus Gramps sind Daten, keine Oberflächentexte
     const name = document.createElement('span');
     name.className = 'result-name';
-    name.textContent = person.name || '(ohne Namen)';
+    name.textContent = person.name || (uiLang === 'en' ? '(no name)' : '(ohne Namen)');
     const dates = document.createElement('span');
     dates.className = 'result-dates';
     dates.textContent = lifeDates(person);
@@ -380,7 +382,7 @@ audioInput.addEventListener('change', async () => {
   remove.disabled = true;
   status.textContent = 'Musik wird hochgeladen …';
   try {
-    const response = await fetch('/api/audio', { method: 'POST', headers: { 'X-Audio-Name': encodeURIComponent(file.name) }, body: file });
+    const response = await fetch('/api/audio', { method: 'POST', headers: { 'X-UI-Lang': uiLang, 'X-Audio-Name': encodeURIComponent(file.name) }, body: file });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Upload fehlgeschlagen.');
     showAudio(result.audioName);
@@ -417,6 +419,58 @@ authForm.addEventListener('submit', async (event) => {
 document.querySelector('#logout-button').addEventListener('click', async () => {
   await request('/api/logout', { method: 'POST', body: '{}' });
   location.reload();
+});
+
+// Konto-Dialog: Passwort ändern und Konto löschen
+const accountDialog = document.querySelector('#account-dialog');
+const passwordForm = document.querySelector('#password-form');
+const deleteForm = document.querySelector('#delete-form');
+
+document.querySelector('#account-button').addEventListener('click', () => {
+  passwordForm.reset();
+  deleteForm.reset();
+  showError(document.querySelector('#password-error'), '');
+  showError(document.querySelector('#delete-error'), '');
+  document.querySelector('#password-success').hidden = true;
+  accountDialog.showModal();
+});
+document.querySelector('#account-close').addEventListener('click', () => accountDialog.close());
+// Klick auf den abgedunkelten Hintergrund schließt den Dialog
+accountDialog.addEventListener('click', (event) => { if (event.target === accountDialog) accountDialog.close(); });
+
+passwordForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const error = document.querySelector('#password-error');
+  const success = document.querySelector('#password-success');
+  const button = document.querySelector('#password-submit');
+  success.hidden = true;
+  showError(error, '');
+  if (passwordForm.elements.newPassword.value !== passwordForm.elements.confirmPassword.value) {
+    showError(error, 'Die Passwörter stimmen nicht überein.');
+    return;
+  }
+  button.disabled = true;
+  try {
+    await request('/api/account/password', { method: 'POST', body: JSON.stringify({ currentPassword: passwordForm.elements.currentPassword.value, newPassword: passwordForm.elements.newPassword.value }) });
+    passwordForm.reset();
+    success.hidden = false;
+  } catch (failure) { showError(error, failure.message); }
+  finally { button.disabled = false; }
+});
+
+deleteForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const error = document.querySelector('#delete-error');
+  const button = document.querySelector('#delete-submit');
+  showError(error, '');
+  button.disabled = true;
+  try {
+    await request('/api/account', { method: 'DELETE', body: JSON.stringify({ password: deleteForm.elements.password.value }) });
+    location.reload();
+  } catch (failure) {
+    showError(error, failure.message);
+    button.disabled = false;
+  }
 });
 
 configForm.addEventListener('submit', async (event) => {

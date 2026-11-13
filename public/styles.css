@@ -20,7 +20,29 @@ button { color: inherit; }
 .topbar { height: 68px; padding: 0 5.5vw; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(23,45,38,.12); background: var(--paper); }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 700; letter-spacing: .02em; }
 .brand-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--green); font-family: var(--serif); font-size: 17px; font-style: italic; }
-.account-area { display: flex; align-items: center; gap: 18px; }
+.topbar-right { display: flex; align-items: center; gap: 22px; }
+.lang-switch { display: inline-flex; border: 1px solid #c9cec2; border-radius: 3px; overflow: hidden; }
+.lang-switch button { min-width: 36px; padding: 6px 8px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+.lang-switch button + button { border-left: 1px solid #c9cec2; }
+.lang-switch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.lang-switch button:focus-visible { outline: 3px solid rgba(220,110,88,.45); outline-offset: -3px; }
+.account-area { display: flex; align-items: center; gap: 8px; }
+.account-area .user-label { margin-right: 6px; }
+.account-dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 26px 28px 28px; overflow-y: auto; border: 0; border-radius: 4px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 70px rgba(23,45,38,.3); }
+.account-dialog::backdrop { background: rgba(23,45,38,.45); }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.dialog-head h2 { margin: 0; font-family: var(--serif); font-size: 26px; font-weight: 500; }
+.dialog-form { display: grid; gap: 14px; padding: 18px 0 22px; }
+.dialog-form h3 { margin: 0; font-size: 14px; }
+.dialog-form label { font-size: 12px; }
+.dialog-form p { margin: 0; font-size: 12px; line-height: 1.6; }
+.dialog-form .button { justify-self: start; }
+.dialog-form .success-message { margin: 0; }
+.danger-zone { padding-bottom: 0; border-top: 1px solid var(--line); }
+.danger-zone > p:not(.form-error) { color: var(--muted); }
+.button-danger { min-height: 42px; padding: 0 16px; border: 1px solid #a5382a; border-radius: 3px; background: transparent; color: #a5382a; font-weight: 600; }
+.button-danger:hover:not(:disabled) { background: #a5382a; color: var(--white); }
+.button-danger:disabled, .button-secondary:disabled { cursor: not-allowed; opacity: .5; }
 .user-label { color: var(--muted); }
 .button { border: 0; cursor: pointer; transition: background .18s ease, transform .18s ease, color .18s ease; }
 .button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .mode-tab:focus-visible { outline: 3px solid rgba(220,110,88,.45); outline-offset: 2px; }
@@ -148,6 +170,9 @@ small { color: var(--muted); font-size: 11px; font-weight: 400; }
 }
 @media (max-width: 560px) {
   .topbar { height: 60px; padding: 0 18px; }
+  .topbar-right { gap: 8px; }
+  .account-area { gap: 0; }
+  .user-label, .brand span:last-child { display: none; }
   .auth-view { min-height: calc(100vh - 60px); padding: 48px 22px 60px; }
   .auth-copy h1 { font-size: 43px; }
   .workspace { padding: 34px 18px 50px; }
