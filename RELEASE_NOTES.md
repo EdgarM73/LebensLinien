@@ -15,6 +15,18 @@ Fehler werden verständlich erklärt, und vieles lässt sich vorab prüfen. Im V
 - **Oberfläche auf Englisch** mit Umschalter DE/EN, auch für alle Fehlermeldungen.
 - **Paare und Familienblöcke im Video:** mehr Platz um die Hauptperson und ihren Ehepartner; Schwiegerkinder und Enkel stehen direkt bei ihren Eltern.
 
+### Fertiges Docker-Image
+
+Ab dieser Version gibt es ein fertiges Image für amd64 und arm64 in der GitHub Container Registry:
+[`ghcr.io/edgarm73/lebenslinien`](https://github.com/EdgarM73/LebensLinien/pkgs/container/lebenslinien), Tags `2026.11.01` und `latest`.
+
+```bash
+docker pull ghcr.io/edgarm73/lebenslinien:2026.11.01
+```
+
+Mit dem Repository: `docker compose pull && docker compose up -d`. Selbst bauen geht weiter mit `docker compose up --build -d`.
+Neue Images entstehen automatisch bei jedem Release.
+
 ### Das Video
 
 - Hat die Hauptperson einen Ehepartner, bekommen beide etwas mehr Abstand zu den übrigen Linien.

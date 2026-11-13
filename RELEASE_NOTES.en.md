@@ -15,6 +15,18 @@ errors are explained clearly, and much can be checked in advance. In the video, 
 - **English interface** with a DE/EN switch, including all error messages.
 - **Couples and family blocks in the video:** more room around the main person and their spouse; children-in-law and grandchildren stand right next to their parents.
 
+### Ready-made Docker image
+
+From this version on there is a ready-made image for amd64 and arm64 in the GitHub Container Registry:
+[`ghcr.io/edgarm73/lebenslinien`](https://github.com/EdgarM73/LebensLinien/pkgs/container/lebenslinien), tags `2026.11.01` and `latest`.
+
+```bash
+docker pull ghcr.io/edgarm73/lebenslinien:2026.11.01
+```
+
+With the repository: `docker compose pull && docker compose up -d`. Building it yourself still works with `docker compose up --build -d`.
+New images are built automatically for every release.
+
 ### The video
 
 - If the main person has a spouse, both get a little more distance from the other lines.
