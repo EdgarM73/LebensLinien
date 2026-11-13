@@ -36,7 +36,7 @@ if (a.help) {
   Pro Hauptperson eine eigene Datei config_<name>.json (url, username, person, extras …, siehe config.example.json).
   Das Video heißt standardmäßig wie die Person: "Vorname Nachname.mp4".
   --demo               Beispieldaten statt Gramps Web
-  --still 30           nur ein Standbild (PNG) bei Sekunde 30 erzeugen
+  --still 30           nur ein Standbild (PNG) bei Sekunde 30 erzeugen (auch: --still middle | end)
   --dump modell.json   berechnetes Modell speichern;  --model modell.json  daraus rendern
   --size 1080x1920  --fps 30  --seconds 60  --lang de|en|tr|bs  --audio musik.mp3  --anonymous  --main-label Opa  --no-grandchildren`);
   process.exit(0);
@@ -69,7 +69,7 @@ else {
     for (const p of pick.slice(0, 15)) console.error(`  ${p.gramps_id}  ${p.primary_name?.first_name} ${p.primary_name?.surname_list?.[0]?.surname || ''}`);
     process.exit(1);
   }
-  model = buildModel(tree, pick[0].handle, { lang, extras, grandchildren: !a['no-grandchildren'] });
+  model = buildModel(tree, pick[0].handle, { lang, extras, grandchildren: !(a['no-grandchildren'] || cfg.grandchildren === false) });
   console.log(`${model.person.name}: ${model.members.length} Angehörige gefunden.`);
   for (const w of model.warnings) console.warn('  Hinweis: ' + w);
 }
@@ -91,11 +91,12 @@ mainLabel = String(mainLabel || '').trim() || undefined;
 const outFile = a.out || cfg.out || `${anonymous ? 'Lebenslinien' : safeName}.mp4`;   // ohne Namen auch nicht im Dateinamen
 const t = localize(model, lang);
 const texts = { title: cfg.texts?.title || t.title, lines: cfg.texts?.lines || t.lines };
-const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : undefined, ageLabel: t.age, anonymous, mainLabel };
+const opt = { width: W, height: H, fps: +a.fps, out: outFile, texts, audio: a.audio || cfg.audio, seconds: a.seconds ? +a.seconds : (Number(cfg.seconds) || undefined), ageLabel: t.age, anonymous, mainLabel };
 
 if (a.still != null) {
-  const png = await render(model, { ...opt, still: +a.still });
-  const pngFile = outFile.replace(/\.mp4$/, '') + `_${a.still}s.png`;
+  const png = await render(model, { ...opt, still: ['middle', 'end'].includes(a.still) ? a.still : +a.still });
+  // Mit --out bild.png genau diese Datei schreiben, sonst <Name>_<Sekunde>s.png
+  const pngFile = /\.png$/i.test(outFile) ? outFile : outFile.replace(/\.mp4$/, '') + `_${a.still}s.png`;
   writeFileSync(pngFile, png);
   console.log('Standbild geschrieben: ' + pngFile);
 } else {

@@ -110,3 +110,39 @@ test('Verbindungstest und Personensuche gegen die GrampsWeb-Testinstanz', { skip
   assert.equal(otherServer.status, 400);
   assert.match((await otherServer.json()).error, /Benutzername und Passwort/, 'das gespeicherte Passwort geht nicht an einen anderen Server');
 });
+
+test('Optionen Dauer und Enkel werden geprüft und gespeichert', async (context) => {
+  const post = await startSession(context);
+  const base = { url: 'https://gramps.example.org', username: 'a', password: 'b', person: 'I0001', lang: 'de', extras: [] };
+
+  for (const seconds of ['19', '181', '45.5', 'abc']) {
+    const response = await post('/api/config', { ...base, seconds });
+    assert.equal(response.status, 400, `Dauer ${seconds} muss abgelehnt werden`);
+    assert.match((await response.json()).error, /zwischen 20 und 180/);
+  }
+  const saved = await (await post('/api/config', { ...base, seconds: '45', grandchildren: false })).json();
+  assert.equal(saved.seconds, 45);
+  assert.equal(saved.grandchildren, false);
+
+  const defaults = await (await post('/api/config', { ...base, seconds: '', grandchildren: true })).json();
+  assert.equal(defaults.seconds, undefined, 'leer bedeutet automatisch');
+  assert.equal(defaults.grandchildren, undefined, 'Enkel sind standardmäßig dabei');
+});
+
+test('Vorschaubild gegen die GrampsWeb-Testinstanz', { skip: !username || !password }, async (context) => {
+  const post = await startSession(context);
+  const none = await post('/api/preview', { position: 'end' });
+  assert.equal(none.status, 400, 'ohne gespeicherte Verbindung gibt es kein Vorschaubild');
+
+  assert.equal((await post('/api/config', { url, username, password, person: 'Gibtesnicht Xyz', lang: 'de', extras: [] })).status, 200);
+  const missing = await post('/api/preview', { position: 'end' });
+  assert.equal(missing.status, 400);
+  assert.match((await missing.json()).error, /nicht gefunden/);
+
+  assert.equal((await post('/api/config', { url, username, password: '', person: 'I0024', lang: 'de', extras: [], seconds: '30' })).status, 200);
+  for (const position of ['middle', 'end']) {
+    const made = await post('/api/preview', { position });
+    assert.equal(made.status, 200);
+    assert.equal((await made.json()).position, position);
+  }
+});

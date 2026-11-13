@@ -65,6 +65,8 @@
               <label>Sprache<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
               <label>Namen<select name="names"><option value="show">Mit Namen</option><option value="hide">Ohne Namen (Ich, Ehefrau, Sohn …)</option></select></label>
               <label id="main-label-field" hidden>Bezeichnung der Hauptperson<input name="mainLabel" maxlength="40" placeholder="z. B. Opa, Mama, Ich"><small>Leer = „Ich“.</small></label>
+              <label>Enkel<select name="grandchildren"><option value="show">Enkel und ihre Partner zeigen</option><option value="hide">Ohne Enkel</option></select></label>
+              <label>Dauer in Sekunden<input name="seconds" type="number" min="20" max="180" step="1" inputmode="numeric" placeholder="automatisch"><small>Länge des Lebenslaufs, dazu kommen 11 Sekunden Schluss. Leer = automatisch (32 bis 75).</small></label>
               <div class="field-wide audio-upload"><label for="audio-input">Hintergrundmusik</label><div class="audio-control"><input id="audio-input" type="file" accept=".mp3,.wav,.m4a,.mp4,.aac,.ogg,.flac,audio/*"><button class="button-audio-remove" id="audio-remove" type="button" hidden>Entfernen</button></div><small id="audio-status" role="status">Optional · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB</small></div>
             </div>
           </section>
@@ -93,8 +95,10 @@
           <p class="eyebrow">Bereit, wenn du es bist</p><h2>Deine Geschichte<br>in Bewegung.</h2>
           <p class="render-copy">Die Lebenslinien entstehen aus den Daten deiner Hauptperson und den hinzugefügten Wegbegleitern.</p>
           <button class="button button-primary render-button" id="generate-button" type="button">Video erstellen <span aria-hidden="true">↗</span></button>
+          <div class="preview-actions" role="group" aria-label="Vorschaubild erstellen"><span>Vorschaubild</span><button class="button button-secondary preview-button" type="button" data-position="middle">Mitte</button><button class="button button-secondary preview-button" type="button" data-position="end">Schluss</button></div>
           <progress class="render-progress" id="render-progress" max="100" value="0" aria-label="Fortschritt der Videoerstellung" hidden></progress>
           <p class="render-message" id="render-message" role="status" aria-live="polite"></p>
+          <img class="preview-image" id="preview-image" alt="Vorschaubild des Videos" hidden>
           <video class="video-preview" id="video-preview" controls playsinline preload="metadata" aria-label="Vorschau des erstellten Videos" hidden></video>
           <a class="button button-download" id="download-link" href="/api/video?download=1" hidden>Video herunterladen <span aria-hidden="true">↓</span></a>
         </aside>

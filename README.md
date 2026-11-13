@@ -22,9 +22,9 @@ Es gibt keine allgemeine config.json.
 Das Video heißt wie die Person, z. B. `Max Mustermann.mp4` (mit `--out` oder `"out"` in der Konfiguration änderbar).
 Bei mehreren Namenstreffern werden die Gramps-IDs aufgelistet; dann `person` auf die ID setzen.
 
-Nützlich: `--demo` (Beispieldaten, ohne Konfiguration), `--still 30` (nur ein PNG bei Sekunde 30), `--dump modell.json` /
+Nützlich: `--demo` (Beispieldaten, ohne Konfiguration), `--still 30` (nur ein PNG bei Sekunde 30, auch `--still middle` oder `--still end`), `--dump modell.json` /
 `--model modell.json` (Daten prüfen oder von Hand korrigieren), `--seconds`, `--audio musik.mp3`,
-`--lang en`, `--size 720x1280`, `--no-grandchildren`, `--anonymous` (ohne Namen: nur "Ich", "Ehefrau", "Sohn" …; in der Konfiguration `"anonymous": true`). Die Hauptperson heißt dann "Ich"; mit `--main-label Opa` bzw. `"mainLabel": "Opa"` (oder je Sprache `{"de": "Opa", "tr": "Dede"}`) legst du eine andere Bezeichnung fest.
+`--lang en`, `--size 720x1280`, `--no-grandchildren` (in der Konfiguration `"grandchildren": false`; die Dauer mit `--seconds 60` bzw. `"seconds": 60`), `--anonymous` (ohne Namen: nur "Ich", "Ehefrau", "Sohn" …; in der Konfiguration `"anonymous": true`). Die Hauptperson heißt dann "Ich"; mit `--main-label Opa` bzw. `"mainLabel": "Opa"` (oder je Sprache `{"de": "Opa", "tr": "Dede"}`) legst du eine andere Bezeichnung fest.
 
 ## Sprache
 

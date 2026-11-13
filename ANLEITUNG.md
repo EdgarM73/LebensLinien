@@ -159,7 +159,9 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
    - **Start** als `JJJJ` oder `JJJJ-MM` (Pflicht), ab dann kommt die Person im Leben vor,
    - **Ende** (optional): ohne Ende bleibt die Person bis zum Schluss, mit Ende driftet die Linie weg oder steigt als Stern auf (verstorben).
 4. **03 Schlusstext:** Titel und zwei Zeilen anpassen. Die Vorschläge folgen der gewählten Sprache.
-5. **Speichern**, dann **Video erstellen**. Nach ein bis zwei Minuten erscheint der Download. Pro Konto wird das jeweils **letzte** Video aufbewahrt.
+5. **Optionen:** Im Abschnitt 01 lassen sich die **Enkel** ausblenden und die **Dauer in Sekunden** festlegen (20 bis 180, leer = automatisch; dazu kommen 11 Sekunden Schluss).
+6. **Vorschaubild:** Die Knöpfe **Mitte** und **Schluss** erzeugen in wenigen Sekunden ein einzelnes Bild. So lassen sich Namen und Schlusstext prüfen, bevor das ganze Video entsteht.
+7. **Video erstellen.** Geänderte Eingaben werden vorher automatisch gespeichert. Ein Balken zeigt den Fortschritt, nach ein bis zwei Minuten erscheinen Vorschau und Download. Pro Konto wird das jeweils **letzte** Video aufbewahrt.
 
 Das Passwort für Gramps wird verschlüsselt (AES-256-GCM) gespeichert, die Kontopasswörter nur als scrypt-Hash.
 

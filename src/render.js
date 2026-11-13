@@ -27,7 +27,7 @@ function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 10139
 
 export async function render(model, opt) {
   setupFonts();
-  const { width: W, height: H, fps, out, still, texts, audio } = opt;
+  const { width: W, height: H, fps, out, texts, audio } = opt;
   const S = W / 1080;                      // alle Maße sind für 1080 Breite gedacht
   const SERIF = 'LSerif, Georgia, serif', SERIFI = 'LSerifI, Georgia, serif', SANS = 'LSans, "Segoe UI", sans-serif';
   const headY = H * 0.47;
@@ -37,6 +37,8 @@ export async function render(model, opt) {
   const mainSec = opt.seconds || Math.max(32, Math.min(75, (t1 - t0) * 0.85));
   const endSec = 11;
   const total = mainSec + endSec;
+  // Standbild: Sekunde oder "middle" (Mitte des Lebenslaufs) bzw. "end" (fertiger Schlussbildschirm)
+  const still = opt.still === 'end' ? total - 1 / fps : opt.still === 'middle' ? mainSec / 2 : opt.still;
 
   // ---- Zeitraffer: um Ereignisse herum langsamer
   const eventTs = [tb, ...model.members.flatMap((m) => [m.initial ? null : m.start, m.end])].filter((t) => t != null && t > t0 && t <= t1);

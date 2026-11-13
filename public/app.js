@@ -77,7 +77,8 @@ function readConfig() {
     };
   }).filter((item) => item.name || item.id || item.start || item.end || item.rel);
   return {
-    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', mainLabel: configForm.elements.mainLabel.value.trim(), extras,
+    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', mainLabel: configForm.elements.mainLabel.value.trim(),
+    grandchildren: data.get('grandchildren') !== 'hide', seconds: configForm.elements.seconds.value.trim(), extras,
     texts: {
       title: document.querySelector('#ending-title').value,
       lines: [document.querySelector('#ending-line-1').value, document.querySelector('#ending-line-2').value],
@@ -97,6 +98,8 @@ function showConfig(config, defaults) {
   configForm.elements.password.value = '';
   configForm.elements.names.value = config.anonymous ? 'hide' : 'show';
   configForm.elements.mainLabel.value = config.mainLabel || '';
+  configForm.elements.grandchildren.value = config.grandchildren === false ? 'hide' : 'show';
+  configForm.elements.seconds.value = config.seconds || '';
   updateMainLabel();
   setSuggestedTexts(defaults);
   if (config.texts) {
@@ -421,24 +424,53 @@ configForm.addEventListener('submit', async (event) => {
   await saveConfig();
 });
 
+// Video und Vorschaubild entstehen aus den gespeicherten Einstellungen: geänderte Eingaben deshalb zuerst speichern
+async function ensureSaved() {
+  const message = document.querySelector('#render-message');
+  message.classList.remove('render-error');
+  if (JSON.stringify(readConfig()) === savedSnapshot && !document.querySelector('.status-pill:not(.ready)')) return true;
+  message.textContent = 'Einstellungen werden gespeichert …';
+  if (await saveConfig()) { message.textContent = ''; return true; }
+  message.classList.add('render-error');
+  message.textContent = 'Die Einstellungen konnten nicht gespeichert werden. Bitte die Meldung unter dem Formular beachten.';
+  return false;
+}
+
+// Vorschaubild: ein einzelnes Bild aus der Mitte oder vom Schluss, in wenigen Sekunden fertig
+for (const button of document.querySelectorAll('.preview-button')) {
+  button.addEventListener('click', async () => {
+    const buttons = [...document.querySelectorAll('.preview-button')];
+    const message = document.querySelector('#render-message');
+    const image = document.querySelector('#preview-image');
+    buttons.forEach((item) => { item.disabled = true; });
+    try {
+      if (!await ensureSaved()) return;
+      message.textContent = 'Vorschaubild wird erstellt …';
+      await request('/api/preview', { method: 'POST', body: JSON.stringify({ position: button.dataset.position }) });
+      // Erst melden, wenn das neue Bild wirklich geladen ist (sonst steht kurz noch das alte da)
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('Das Vorschaubild konnte nicht geladen werden.'));
+        image.src = `/api/preview?v=${Date.now()}`;
+      });
+      image.hidden = false;
+      message.textContent = button.dataset.position === 'end' ? 'Vorschau: Schlussbild.' : 'Vorschau: Mitte des Lebenslaufs.';
+    } catch (error) {
+      message.classList.add('render-error');
+      message.textContent = error.message;
+    } finally { buttons.forEach((item) => { item.disabled = false; }); }
+  });
+}
+
 document.querySelector('#generate-button').addEventListener('click', async (event) => {
   const button = event.currentTarget;
   const message = document.querySelector('#render-message');
   button.disabled = true;
-  message.classList.remove('render-error');
-  // Das Video entsteht aus den gespeicherten Einstellungen: geänderte Eingaben deshalb zuerst speichern
-  if (JSON.stringify(readConfig()) !== savedSnapshot || document.querySelector('.status-pill:not(.ready)')) {
-    message.textContent = 'Einstellungen werden gespeichert …';
-    if (!await saveConfig()) {
-      message.classList.add('render-error');
-      message.textContent = 'Die Einstellungen konnten nicht gespeichert werden. Bitte die Meldung unter dem Formular beachten.';
-      button.disabled = false;
-      return;
-    }
-  }
+  if (!await ensureSaved()) { button.disabled = false; return; }
   try {
     previousVideo = !document.querySelector('#video-preview').hidden;
     showVideo(false);
+    document.querySelector('#preview-image').hidden = true;
     if (showJob(await request('/api/generate', { method: 'POST', body: '{}' }))) pollJob();
   } catch (error) {
     message.classList.add('render-error');

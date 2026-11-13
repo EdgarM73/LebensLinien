@@ -163,7 +163,9 @@ The interface should **never** be exposed to the internet unprotected. At least 
    - **Start** as `YYYY` or `YYYY-MM` (required), from then on the person is part of the life,
    - **Ende (end)** (optional): without an end the person stays until the finish; with an end the line drifts away or rises as a star (deceased).
 4. **03 Schlusstext (closing text):** adjust the title and two lines. The suggestions follow the chosen language.
-5. **Save**, then **Video erstellen (create video)**. After one to two minutes the download appears. Per account the **latest** video is kept.
+5. **Options:** in section 01 you can hide the **Enkel (grandchildren)** and set the **Dauer in Sekunden (duration in seconds)** (20 to 180, empty = automatic; the ending adds 11 seconds).
+6. **Vorschaubild (preview image):** the buttons **Mitte (middle)** and **Schluss (ending)** create a single image within seconds, so you can check names and the closing text before rendering the whole video.
+7. **Video erstellen (create video).** Changed input is saved automatically first. A bar shows the progress; after one to two minutes the preview and the download appear. Per account the **latest** video is kept.
 
 The Gramps password is stored encrypted (AES-256-GCM); account passwords only as scrypt hashes.
 

@@ -13,6 +13,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.resolve(process.env.APP_DATA_DIR || path.join(ROOT, 'data'));
 const VIDEO_DIR = path.join(DATA, 'videos');
 const AUDIO_DIR = path.join(DATA, 'audio');
+const PREVIEW_DIR = path.join(DATA, 'previews');
 const RESET_DIR = path.join(DATA, 'password-resets');
 const USERS_FILE = path.join(DATA, 'users.json');
 const KEY_FILE = path.join(DATA, 'master.key');
@@ -25,12 +26,14 @@ const RATE_LIMIT = 20;
 const sessions = new Map();   // sha256(Token) -> { userId, expires }; liegt auch in sessions.json, damit ein Neustart niemanden abmeldet
 const attempts = new Map();
 const generating = new Set();
+const previewing = new Set();   // Konten, für die gerade ein Vorschaubild entsteht
 const jobs = new Map();   // userId -> { state: 'running' | 'done' | 'error', phase, progress, error }
 
 class InputError extends Error {}
 
 mkdirSync(VIDEO_DIR, { recursive: true });
 mkdirSync(AUDIO_DIR, { recursive: true });
+mkdirSync(PREVIEW_DIR, { recursive: true });
 const key = process.env.APP_KEY
   ? Buffer.from(process.env.APP_KEY, 'base64')
   : (existsSync(KEY_FILE) ? readFileSync(KEY_FILE) : randomBytes(32));
@@ -260,14 +263,18 @@ function validateConfig(input, previous) {
     : undefined;
   if (title.length > 120 || lines.some((line) => line.length > 180)) throw new InputError('Der Titel darf 120, jede Schlusszeile 180 Zeichen lang sein.');
   const mainLabel = String(input.mainLabel || '').trim().slice(0, 40);
-  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(mainLabel ? { mainLabel } : {}), ...(texts ? { texts } : {}) };
+  // Dauer des Lebenslaufs in Sekunden (ohne die 11 Sekunden Schluss); leer = automatisch
+  const secondsRaw = String(input.seconds ?? '').trim();
+  const seconds = secondsRaw ? Number(secondsRaw) : null;
+  if (secondsRaw && !(Number.isInteger(seconds) && seconds >= 20 && seconds <= 180)) throw new InputError('Die Dauer muss eine ganze Zahl zwischen 20 und 180 Sekunden sein (leer = automatisch).');
+  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(mainLabel ? { mainLabel } : {}), ...(input.grandchildren === false ? { grandchildren: false } : {}), ...(seconds ? { seconds } : {}), ...(texts ? { texts } : {}) };
 }
 
 // Übersetzt die Ausgabe des Generators in eine Meldung, die der Nutzer sehen darf.
 // Unbekannte Fehler bleiben allgemein, Details stehen nur im Server-Protokoll.
 function friendlyError(error, fallback = 'Das Video konnte nicht erstellt werden. Bitte Verbindung und Gramps-Daten prüfen.') {
   const text = String(error?.stderr || '');
-  if (error?.timedOut) return 'Die Videoerzeugung hat das Zeitlimit von 15 Minuten überschritten.';
+  if (error?.timedOut) return 'Die Erzeugung hat das Zeitlimit überschritten.';
   if (text.includes('Niemand gefunden')) return 'Die Hauptperson wurde in Gramps nicht gefunden. Bitte Namen oder Gramps-ID prüfen.';
   if (text.includes('Mehrere Treffer')) {
     const hits = text.split('\n').filter((line) => /^\s{2}\S/.test(line)).slice(0, 8).map((line) => line.trim().replace(/\s+/g, ' '));
@@ -283,15 +290,17 @@ function friendlyError(error, fallback = 'Das Video konnte nicht erstellt werden
   return fallback;
 }
 
-function runGenerator(user, config, onProgress = () => {}) {
+// Erzeugt das Video oder, mit still = 'middle' | 'end', nur ein verkleinertes Vorschaubild (PNG).
+function runGenerator(user, config, onProgress = () => {}, still = null) {
   return new Promise((resolve, reject) => {
     const tmpConfig = path.join(DATA, `config-${user.id}-${randomUUID()}.json`);
-    const outputName = `${user.id}-${Date.now()}.mp4`;
-    const outputPath = path.join(VIDEO_DIR, outputName);
+    const outputName = still ? `${user.id}.png` : `${user.id}-${Date.now()}.mp4`;
+    const outputPath = path.join(still ? PREVIEW_DIR : VIDEO_DIR, outputName);
     const { password, ...nonSecretConfig } = config;
     writeFileSync(tmpConfig, JSON.stringify(nonSecretConfig), { mode: 0o600, flag: 'wx' });
     const args = [path.join(ROOT, 'src', 'index.js'), tmpConfig, '--out', outputPath, '--lang', config.lang];
-    if (user.audioFile) {
+    if (still) args.push('--still', still, '--size', '540x960');
+    if (user.audioFile && !still) {
       const audioPath = path.join(AUDIO_DIR, path.basename(user.audioFile));
       if (!existsSync(audioPath)) { try { unlinkSync(tmpConfig); } catch {} reject(Object.assign(new Error('Die gespeicherte Audiodatei wurde nicht gefunden.'), { stderr: 'Audiodatei' })); return; }
       args.push('--audio', audioPath);
@@ -315,7 +324,7 @@ function runGenerator(user, config, onProgress = () => {}) {
       const percent = [...text.matchAll(/(\d{1,3}) %/g)].pop();
       if (percent) onProgress({ phase: 'render', progress: Math.min(100, Number(percent[1])) });
     });
-    const timeout = setTimeout(() => { timedOut = true; child.kill(); }, 15 * 60 * 1000);
+    const timeout = setTimeout(() => { timedOut = true; child.kill(); }, (still ? 2 : 15) * 60 * 1000);
     child.on('error', (error) => { clearTimeout(timeout); try { unlinkSync(tmpConfig); } catch {} reject(error); });
     child.on('close', (code) => {
       clearTimeout(timeout);
@@ -507,6 +516,28 @@ const server = createServer(async (req, res) => {
       return json(res, 202, job);
     }
     if (req.method === 'GET' && url.pathname === '/api/generate') return json(res, 200, jobs.get(user.id) || { state: 'idle' });
+    if (req.method === 'POST' && url.pathname === '/api/preview') {
+      const input = await body(req);
+      const position = input.position === 'middle' ? 'middle' : 'end';
+      const config = decrypt(user.config);
+      if (!config) return json(res, 400, { error: 'Bitte zuerst die Verbindungsdaten speichern.' });
+      if (previewing.has(user.id)) return json(res, 409, { error: 'Es wird bereits ein Vorschaubild erstellt.' });
+      if (previewing.size >= 2) return json(res, 503, { error: 'Der Server ist gerade ausgelastet. Bitte gleich noch einmal versuchen.' });
+      previewing.add(user.id);
+      try {
+        await runGenerator(user, config, undefined, position);
+        return json(res, 200, { ok: true, position });
+      } catch (error) {
+        console.error(`Vorschaubild für ${user.username} fehlgeschlagen:`, error.message);
+        return json(res, 400, { error: friendlyError(error, 'Das Vorschaubild konnte nicht erstellt werden. Bitte Verbindung und Gramps-Daten prüfen.') });
+      } finally { previewing.delete(user.id); }
+    }
+    if (req.method === 'GET' && url.pathname === '/api/preview') {
+      const file = path.join(PREVIEW_DIR, `${user.id}.png`);
+      if (!existsSync(file)) return json(res, 404, { error: 'Noch kein Vorschaubild vorhanden.' });
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'private, no-store' });
+      return createReadStream(file).pipe(res);
+    }
     if (req.method === 'GET' && url.pathname === '/api/video') {
       if (!user.lastVideo) return json(res, 404, { error: 'Noch kein Video vorhanden.' });
       const file = path.join(VIDEO_DIR, path.basename(user.lastVideo));

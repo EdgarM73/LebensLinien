@@ -26,9 +26,9 @@ node src/index.js config_grandpa.json
 The video is named after the person, e.g. `Max Mustermann.mp4` (change it with `--out` or `"out"` in the configuration).
 If a name matches several people, the Gramps IDs are listed; then set `person` to the ID.
 
-Useful options: `--demo` (sample data, no configuration needed), `--still 30` (only a PNG at second 30), `--dump model.json` /
+Useful options: `--demo` (sample data, no configuration needed), `--still 30` (only a PNG at second 30, also `--still middle` or `--still end`), `--dump model.json` /
 `--model model.json` (inspect or hand-edit the data), `--seconds`, `--audio music.mp3`, `--lang en`, `--size 720x1280`,
-`--no-grandchildren`, `--anonymous` (no names: only "Me", "Wife", "Son" …; in the configuration `"anonymous": true`). The main person is then labelled "Me"; set a different label with `--main-label Grandpa` or `"mainLabel": "Grandpa"` (or per language `{"de": "Opa", "tr": "Dede"}`).
+`--no-grandchildren` (in the configuration `"grandchildren": false`; the duration with `--seconds 60` or `"seconds": 60`), `--anonymous` (no names: only "Me", "Wife", "Son" …; in the configuration `"anonymous": true`). The main person is then labelled "Me"; set a different label with `--main-label Grandpa` or `"mainLabel": "Grandpa"` (or per language `{"de": "Opa", "tr": "Dede"}`).
 
 ## Language
 
