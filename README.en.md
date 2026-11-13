@@ -82,8 +82,8 @@ the environment and back it up separately.
 Gramps passwords are encrypted with AES-256-GCM, account passwords are stored as scrypt hashes. Gramps connections must use
 HTTPS; HTTP is only allowed for `localhost`. Do not expose the web interface to the internet unprotected. For external access you need
 at least an HTTPS reverse proxy, `COOKIE_SECURE=true`, an `APP_REGISTRATION_KEY`, a well-protected host and a limit on the allowed
-Gramps servers (comma-separated host names in `APP_ALLOWED_GRAMPS_HOSTS`). Sessions are valid for 12 hours and are discarded
-when the server restarts.
+Gramps servers (comma-separated host names in `APP_ALLOWED_GRAMPS_HOSTS`). Sessions are valid for 12 hours and survive
+a server restart. Behind a reverse proxy set `APP_TRUSTED_PROXIES=1` so the sign-in rate limit counts per visitor.
 
 ## Docker
 Docker with Docker Compose is required. In the project folder create a `.env` from the template and replace the invitation

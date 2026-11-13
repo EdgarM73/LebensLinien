@@ -77,6 +77,7 @@ Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommando
 | `BIND_ADDR` | Adresse, an die der Container-Port gebunden wird | `127.0.0.1` (nur dieser Rechner) |
 | `PORT` | Port auf dem Host | `3000` |
 | `COOKIE_SECURE` | `true`, sobald die Seite über HTTPS ausgeliefert wird | `false` |
+| `APP_TRUSTED_PROXIES` | Anzahl der eigenen Reverse Proxys vor der App. Mit `1` zählt die Anmeldebegrenzung je Besucher statt je Proxy. Ohne Proxy bei `0` lassen, sonst ließe sich die Sperre umgehen. | `0` |
 | `APP_ALLOWED_GRAMPS_HOSTS` | Erlaubte Gramps-Hostnamen, kommagetrennt (z. B. `gramps.example.org`) | leer = alle |
 | `APP_KEY` | Eigener Verschlüsselungsschlüssel (Base64, 32 Byte): `openssl rand -base64 32` | wird automatisch erzeugt |
 
@@ -137,6 +138,7 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
 
 - HTTPS über einen Reverse Proxy (Caddy, nginx, Traefik …), der auf den Container-Port zeigt.
 - `COOKIE_SECURE=true` in `.env`.
+- `APP_TRUSTED_PROXIES=1` in `.env` (bei zwei hintereinander geschalteten eigenen Proxys `2`).
 - Einen langen `APP_REGISTRATION_KEY`.
 - `APP_ALLOWED_GRAMPS_HOSTS` auf deinen Gramps-Server begrenzen.
 - `BIND_ADDR` nur dann auf eine andere Adresse setzen, wenn der Proxy sie braucht (z. B. die Adresse im gemeinsamen Docker-Netz),

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createCipheriv, createDecipheriv } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, createReadStream, statSync } from 'node:fs';
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createCipheriv, createDecipheriv, createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, createReadStream, statSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LANGS } from './src/i18n.js';
@@ -17,8 +17,11 @@ const USERS_FILE = path.join(DATA, 'users.json');
 const KEY_FILE = path.join(DATA, 'master.key');
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
+const SESSIONS_FILE = path.join(DATA, 'sessions.json');
 const SESSION_MS = 12 * 60 * 60 * 1000;
-const sessions = new Map();
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT = 20;
+const sessions = new Map();   // sha256(Token) -> { userId, expires }; liegt auch in sessions.json, damit ein Neustart niemanden abmeldet
 const attempts = new Map();
 const generating = new Set();
 const jobs = new Map();   // userId -> { state: 'running' | 'done' | 'error', phase, progress, error }
@@ -39,6 +42,42 @@ const saveUsers = () => {
   writeFileSync(temp, JSON.stringify(users), { mode: 0o600 });
   renameSync(temp, USERS_FILE);
 };
+
+// Sitzungen: In der Datei steht nur der Hash des Tokens, eine kopierte Datei meldet also niemanden an.
+const hashToken = (token) => createHash('sha256').update(String(token)).digest('base64url');
+const saveSessions = () => {
+  const temp = `${SESSIONS_FILE}.${randomUUID()}.tmp`;
+  writeFileSync(temp, JSON.stringify([...sessions]), { mode: 0o600 });
+  renameSync(temp, SESSIONS_FILE);
+};
+try {
+  for (const [id, session] of JSON.parse(readFileSync(SESSIONS_FILE, 'utf8'))) {
+    if (session?.expires > Date.now() && users.some((user) => user.id === session.userId)) sessions.set(id, session);
+  }
+} catch {}   // keine oder beschädigte Datei: ohne Sitzungen starten
+
+// Aufräumen nach einem Neustart: liegengebliebene Temp-Konfigurationen löschen und
+// Videoaufträge, die der Neustart abgebrochen hat, als Fehler melden statt sie stumm zu verlieren.
+for (const file of readdirSync(DATA)) {
+  if (/^config-.+\.json$/.test(file)) { try { unlinkSync(path.join(DATA, file)); } catch {} }
+}
+if (users.some((user) => user.pendingJob)) {
+  for (const user of users) {
+    if (!user.pendingJob) continue;
+    jobs.set(user.id, { state: 'error', error: 'Der Server wurde während der Videoerstellung neu gestartet. Bitte das Video erneut erstellen.' });
+    delete user.pendingJob;
+  }
+  saveUsers();
+}
+
+// Abgelaufene Sitzungen und alte Zähler der Anmeldebegrenzung regelmäßig entfernen
+setInterval(() => {
+  const now = Date.now();
+  let changed = false;
+  for (const [id, session] of sessions) if (session.expires < now) { sessions.delete(id); changed = true; }
+  if (changed) saveSessions();
+  for (const [id, entry] of attempts) if (now - entry.start > RATE_WINDOW_MS) attempts.delete(id);
+}, 10 * 60 * 1000).unref();
 
 function encrypt(value) {
   const nonce = randomBytes(12);
@@ -103,8 +142,11 @@ function cookie(req, name) {
 
 function sessionUser(req) {
   const token = cookie(req, 'lebenslinien_session');
-  const session = sessions.get(token);
-  if (!session || session.expires < Date.now()) { sessions.delete(token); return null; }
+  if (!token) return null;
+  const id = hashToken(token);
+  const session = sessions.get(id);
+  if (!session) return null;
+  if (session.expires < Date.now()) { sessions.delete(id); saveSessions(); return null; }
   return users.find((user) => user.id === session.userId) || null;
 }
 
@@ -114,16 +156,29 @@ function validOrigin(req) {
   try { return new URL(origin).host === req.headers.host; } catch { return false; }
 }
 
-function rateAllowed(req, action) {
-  const ip = req.socket.remoteAddress || 'unknown';
-  const id = `${action}:${ip}`;
-  const now = Date.now();
-  const entry = attempts.get(id) || { count: 0, start: now };
-  if (now - entry.start > 15 * 60 * 1000) { entry.count = 0; entry.start = now; }
-  entry.count++;
-  attempts.set(id, entry);
-  return entry.count <= 20;
+// Adresse des Aufrufers. Hinter einem Reverse Proxy ist die Verbindungsadresse immer die des Proxys;
+// dann zählt der Eintrag in X-Forwarded-For, den der eigene (vertrauenswürdige) Proxy angehängt hat.
+// APP_TRUSTED_PROXIES = Anzahl der eigenen Proxys vor der App (0 = Header ignorieren, er wäre sonst fälschbar).
+function clientIp(req) {
+  const hops = Number.parseInt(process.env.APP_TRUSTED_PROXIES || '0', 10);
+  if (hops > 0) {
+    const chain = String(req.headers['x-forwarded-for'] || '').split(',').map((part) => part.trim()).filter(Boolean);
+    if (chain.length >= hops) return chain[chain.length - hops];
+  }
+  return req.socket.remoteAddress || 'unknown';
 }
+
+// Anmeldebegrenzung je Adresse: gezählt werden Fehlversuche, eine erfolgreiche Anmeldung setzt den Zähler zurück.
+function rateEntry(req, action) {
+  const id = `${action}:${clientIp(req)}`;
+  const now = Date.now();
+  let entry = attempts.get(id);
+  if (!entry || now - entry.start > RATE_WINDOW_MS) { entry = { count: 0, start: now }; attempts.set(id, entry); }
+  return entry;
+}
+const rateBlocked = (req, action) => rateEntry(req, action).count >= RATE_LIMIT;
+const rateHit = (req, action) => { rateEntry(req, action).count++; };
+const rateClear = (req, action) => { attempts.delete(`${action}:${clientIp(req)}`); };
 
 function publicConfig(user) {
   const config = decrypt(user.config);
@@ -283,7 +338,8 @@ const server = createServer(async (req, res) => {
     if (!validOrigin(req)) return json(res, 403, { error: 'Ungültige Herkunft der Anfrage.' });
     if (req.method === 'POST' && ['/api/register', '/api/login'].includes(url.pathname)) {
       const action = url.pathname.endsWith('register') ? 'register' : 'login';
-      if (!rateAllowed(req, action)) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
+      if (rateBlocked(req, action)) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
+      if (action === 'register') rateHit(req, action);   // Registrierungen zählen immer, damit niemand massenhaft Konten anlegt
       const input = await body(req);
       const username = String(input.username || '').trim();
       const password = String(input.password || '');
@@ -299,32 +355,35 @@ const server = createServer(async (req, res) => {
         const found = users.find((user) => user.username.toLowerCase() === username.toLowerCase());
         const salt = found ? Buffer.from(found.salt, 'base64') : Buffer.alloc(16);
         const hash = scryptSync(password, salt, 64);
-        if (!found || !timingSafeEqual(hash, Buffer.from(found.passwordHash, 'base64'))) return json(res, 401, { error: 'Anmeldung fehlgeschlagen.' });
+        if (!found || !timingSafeEqual(hash, Buffer.from(found.passwordHash, 'base64'))) { rateHit(req, action); return json(res, 401, { error: 'Anmeldung fehlgeschlagen.' }); }
+        rateClear(req, action);
       }
       const user = users.find((item) => item.username.toLowerCase() === username.toLowerCase());
       const token = randomBytes(32).toString('base64url');
-      sessions.set(token, { userId: user.id, expires: Date.now() + SESSION_MS });
+      sessions.set(hashToken(token), { userId: user.id, expires: Date.now() + SESSION_MS });
+      saveSessions();
       return json(res, 200, { username: user.username }, { 'Set-Cookie': `lebenslinien_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_MS / 1000}${process.env.COOKIE_SECURE === 'true' ? '; Secure' : ''}` });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/password-reset/complete') {
-      if (!rateAllowed(req, 'password-reset')) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
+      if (rateBlocked(req, 'password-reset')) return json(res, 429, { error: 'Zu viele Versuche. Bitte später erneut probieren.' });
       const input = await body(req);
       const password = String(input.password || '');
       if (password.length < 8 || password.length > 256) return json(res, 400, { error: 'Das Passwort muss 8–256 Zeichen lang sein.' });
       const target = consumePasswordReset(input.token, users, RESET_DIR);
-      if (!target) return json(res, 400, { error: 'Der Reset-Link ist ungültig oder abgelaufen.' });
+      if (!target) { rateHit(req, 'password-reset'); return json(res, 400, { error: 'Der Reset-Link ist ungültig oder abgelaufen.' }); }
       const salt = randomBytes(16);
       target.salt = salt.toString('base64');
       target.passwordHash = scryptSync(password, salt, 64).toString('base64');
       saveUsers();
       for (const [sessionToken, session] of sessions) if (session.userId === target.id) sessions.delete(sessionToken);
+      saveSessions();
       return json(res, 200, { ok: true });
     }
 
     const user = sessionUser(req);
     if (req.method === 'POST' && url.pathname === '/api/logout') {
-      sessions.delete(cookie(req, 'lebenslinien_session'));
+      if (sessions.delete(hashToken(cookie(req, 'lebenslinien_session')))) saveSessions();
       return json(res, 200, { ok: true }, { 'Set-Cookie': 'lebenslinien_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
     }
     if (!user) return json(res, 401, { error: 'Bitte zuerst anmelden.' });
@@ -367,6 +426,8 @@ const server = createServer(async (req, res) => {
       generating.add(user.id);
       const job = { state: 'running', phase: 'load', progress: 0 };
       jobs.set(user.id, job);
+      user.pendingJob = true;   // überlebt einen Neustart, damit der Abbruch gemeldet werden kann
+      saveUsers();
       runGenerator(user, config, (update) => Object.assign(job, update)).then(({ outputName, personName }) => {
         if (user.lastVideo) {
           try { unlinkSync(path.join(VIDEO_DIR, path.basename(user.lastVideo))); } catch {}
@@ -378,7 +439,11 @@ const server = createServer(async (req, res) => {
       }).catch((error) => {
         console.error(`Generierung für ${user.username} fehlgeschlagen:`, error.message);
         Object.assign(job, { state: 'error', error: friendlyError(error) });
-      }).finally(() => generating.delete(user.id));
+      }).finally(() => {
+        generating.delete(user.id);
+        delete user.pendingJob;
+        try { saveUsers(); } catch (error) { console.error(error); }
+      });
       return json(res, 202, job);
     }
     if (req.method === 'GET' && url.pathname === '/api/generate') return json(res, 200, jobs.get(user.id) || { state: 'idle' });

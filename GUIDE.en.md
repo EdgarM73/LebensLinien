@@ -79,6 +79,7 @@ Note: the web interface and its messages are in German. This guide gives the Ger
 | `BIND_ADDR` | Address the container port is bound to | `127.0.0.1` (this machine only) |
 | `PORT` | Port on the host | `3000` |
 | `COOKIE_SECURE` | `true` as soon as the site is served over HTTPS | `false` |
+| `APP_TRUSTED_PROXIES` | Number of your own reverse proxies in front of the app. With `1` the sign-in rate limit counts per visitor instead of per proxy. Leave at `0` without a proxy, otherwise the limit could be bypassed. | `0` |
 | `APP_ALLOWED_GRAMPS_HOSTS` | Allowed Gramps host names, comma-separated (e.g. `gramps.example.org`) | empty = all |
 | `APP_KEY` | Your own encryption key (Base64, 32 bytes): `openssl rand -base64 32` | generated automatically |
 
@@ -139,6 +140,7 @@ The interface should **never** be exposed to the internet unprotected. At least 
 
 - HTTPS through a reverse proxy (Caddy, nginx, Traefik …) pointing at the container port.
 - `COOKIE_SECURE=true` in `.env`.
+- `APP_TRUSTED_PROXIES=1` in `.env` (`2` with two of your own proxies in a row).
 - A long `APP_REGISTRATION_KEY`.
 - `APP_ALLOWED_GRAMPS_HOSTS` limited to your Gramps server.
 - Only set `BIND_ADDR` to another address if the proxy needs it (e.g. the address on the shared Docker network),
