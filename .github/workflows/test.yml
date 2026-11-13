@@ -1,0 +1,50 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Dieselbe Schrift wie im Container, damit das Standbild genauso aussieht
+      - name: Schriften installieren
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+
+      - run: npm ci
+
+      # Die Tests gegen eine echte Gramps-Web-Instanz laufen nur, wenn die drei Secrets
+      # GRAMPS_TEST_URL, GRAMPS_TEST_USERNAME und GRAMPS_TEST_PASSWORD gesetzt sind; sonst werden sie übersprungen.
+      - name: Tests
+        run: npm test
+        env:
+          GRAMPS_TEST_URL: ${{ secrets.GRAMPS_TEST_URL }}
+          GRAMPS_TEST_USERNAME: ${{ secrets.GRAMPS_TEST_USERNAME }}
+          GRAMPS_TEST_PASSWORD: ${{ secrets.GRAMPS_TEST_PASSWORD }}
+
+      # Rauchtest für das Zeichnen: Schlussbild mit Beispieldaten (ohne ffmpeg und ohne Gramps)
+      - name: Standbild mit Beispieldaten
+        run: |
+          node src/index.js --demo --still end --size 540x960 --out demo-end.png
+          test -s demo-end.png
+
+      - name: Standbild hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-standbild
+          path: demo-end.png
+          retention-days: 7

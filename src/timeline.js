@@ -109,7 +109,12 @@ export function buildModel(tree, rootHandle, opts = {}) {
   const parents = parentsOf(rootHandle);
   let unknownParents = 0;
   const parentSide = new Map(parents.map((ph) => { const g = genderOf(people.get(ph)); return [ph, g === 1 ? -1 : g === 0 ? 1 : (unknownParents++ % 2 ? 1 : -1)]; }));
-  for (const ph of parents) for (const gh of parentsOf(ph)) add(gh, 0, g3(genderOf(people.get(gh)), lang.grandfather, lang.grandmother, lang.grandfather), null, { side: parentSide.get(ph) });
+  // Großmutter je Seite: manche Sprachen unterscheiden (Türkisch: Babaanne = Mutter des Vaters, Anneanne = Mutter der Mutter)
+  for (const ph of parents) {
+    const pg = genderOf(people.get(ph));
+    const grandmother = g3(pg, lang.grandmotherPaternal, lang.grandmotherMaternal, lang.grandmother);
+    for (const gh of parentsOf(ph)) add(gh, 0, g3(genderOf(people.get(gh)), lang.grandfather, grandmother, lang.grandfather), null, { side: parentSide.get(ph) });
+  }
   for (const ph of parents) add(ph, 1, g3(genderOf(people.get(ph)), lang.father, lang.mother, lang.father), null, { side: parentSide.get(ph) });
   let sibN = 0, spouseN = 0, kidN = 0;
   for (const fh of root.parent_family_list || []) {
