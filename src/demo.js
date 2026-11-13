@@ -14,7 +14,7 @@ export const demoModel = {
     { id: 'h', side: -1, name: 'Julia', rel: 'Ehefrau', group: 3, start: 2008.6, end: null, exit: null, initial: false },
     { id: 'i', side: -1, name: 'Tim', rel: 'Sohn', group: 4, start: 1992.3, end: null, exit: null, initial: false, birth: true },
     { id: 'j', side: 1, name: 'Lena', rel: 'Tochter', group: 4, start: 1995.9, end: null, exit: null, initial: false, birth: true },
-    { id: 'k', side: 1, name: 'Emil', rel: 'Enkel', group: 5, start: 2021.2, end: null, exit: null, initial: false, birth: true },
+    { id: 'k', side: 1, name: 'Emil', rel: 'Enkel', group: 5, childOf: 'j', start: 2021.2, end: null, exit: null, initial: false, birth: true },
     { id: 'n1', side: -1, name: 'Nina', rel: 'Schwiegertochter', relKey: 'daughterInLaw', group: 7, partnerOf: 'i', start: 2017.3, end: null, exit: null, initial: false },
     { id: 'n2', side: 1, name: 'Tom', rel: 'Schwiegersohn', relKey: 'sonInLaw', group: 7, partnerOf: 'j', start: 2019.6, end: null, exit: null, initial: false },
     { id: 'x1', name: 'Peter', rel: 'Freund', group: 6, start: 1970.5, end: null, exit: null, initial: false },

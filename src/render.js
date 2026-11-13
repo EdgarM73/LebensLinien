@@ -77,26 +77,39 @@ export async function render(model, opt) {
   // Nähe zur Hauptperson: Kinder, Partner, Eltern/Enkel, Geschwister, dann der Rest (Großeltern, Freunde …)
   const tier = (m) => (m.group === 4 ? 0 : m.group === 3 ? 1 : m.group === 1 || m.group === 5 ? 2 : m.group === 2 ? 3 : 4);
   const byCloseness = (a, b) => tier(a) - tier(b) || a.group - b.group || a.start - b.start;
-  // Ehepartner eines Nachkommen direkt neben (außen an) seinen Partner setzen, statt ganz nach außen
+  // Familienblöcke von innen nach außen: Kind, sein Ehepartner, dann deren Kinder (Enkel, jeweils mit Ehepartner).
+  // Wer zu einem Block gehört, wird dort eingereiht statt nach der allgemeinen Nähe-Regel.
   const pairUp = (list) => {
-    const out = list.filter((m) => !(m.partnerOf && list.some((p) => p.id === m.partnerOf)));
-    for (const m of list) {
-      if (!m.partnerOf) continue;
-      const at = out.findIndex((p) => p.id === m.partnerOf);
-      if (at >= 0) out.splice(at + 1, 0, m);
-    }
+    const inList = new Set(list.map((m) => m.id));
+    const linked = (m) => (m.partnerOf && inList.has(m.partnerOf)) || (m.childOf && inList.has(m.childOf));
+    const out = [];
+    const emit = (m) => {
+      out.push(m);
+      for (const p of list) if (p.partnerOf === m.id) out.push(p);
+      for (const k of list.filter((x) => x.childOf === m.id && !x.partnerOf).sort((a, b) => a.start - b.start)) emit(k);
+    };
+    for (const m of list) if (!linked(m)) emit(m);
     return out;
   };
-  // Paar-Kennung je Bahn: die Hauptperson mit ihrem aktuellen Ehepartner, ein Nachkomme mit seinem Ehepartner
+  // Block-Kennung je Bahn: die Hauptperson mit ihrem aktuellen Ehepartner, ein Kind mit Ehepartner und Enkeln.
+  // Nur Blöcke mit mindestens zwei Linien bekommen den zusätzlichen Abstand.
   const coupleIds = (lanes) => {
     const ids = new Map();
     const spouse = lanes.find((m) => m.group === 3 && !m.isMe);
     if (spouse) { ids.set(me, 'me'); ids.set(spouse, 'me'); }
-    for (const m of lanes) {
-      if (!m.partnerOf) continue;
-      const partner = lanes.find((p) => p.id === m.partnerOf);
-      if (partner && partner.leftSide === m.leftSide) { ids.set(m, m.partnerOf); ids.set(partner, m.partnerOf); }
-    }
+    const byId = new Map(lanes.map((m) => [m.id, m]));
+    const rootOf = (m) => {
+      let r = m;
+      for (let i = 0; i < 4; i++) {
+        const up = byId.get(r.partnerOf) || byId.get(r.childOf);
+        if (!up || up.leftSide !== m.leftSide) break;
+        r = up;
+      }
+      return r;
+    };
+    const blocks = new Map();
+    for (const m of lanes) if (!m.isMe && m.group !== 3) { const r = rootOf(m); if (!blocks.has(r)) blocks.set(r, []); blocks.get(r).push(m); }
+    for (const [root, members] of blocks) if (members.length > 1) for (const m of members) ids.set(m, root.id);
     return ids;
   };
 
@@ -194,8 +207,8 @@ export async function render(model, opt) {
     const mid = W / 2;
     const left = pairUp(lanes.filter((m) => !m.isMe && m.leftSide).sort(byCloseness));
     const right = pairUp(lanes.filter((m) => !m.isMe && !m.leftSide).sort(byCloseness));
-    // Paare (Hauptperson + Ehepartner, Kind + Schwiegerkind) bekommen etwas mehr Abstand zu ihren Nachbarn:
-    // zwischen zwei Nachbarn liegt eine Lücke, wenn mindestens einer zu einem Paar gehört und sie nicht dasselbe Paar sind.
+    // Paare und Familienblöcke (Hauptperson + Ehepartner; Kind + Ehepartner + Enkel) bekommen etwas mehr Abstand:
+    // zwischen zwei Nachbarn liegt eine Lücke, wenn mindestens einer zu einem Block gehört und sie nicht im selben Block sind.
     const couple = coupleIds(lanes);
     const offsets = (list) => {
       const out = []; let pos = 0, prev = me;

@@ -85,7 +85,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
 
   const members = new Map();
   const warnings = [];
-  const add = (handle, group, rel, startRaw, { endOverride, exit, needStart, side, partnerOf } = {}) => {
+  const add = (handle, group, rel, startRaw, { endOverride, exit, needStart, side, partnerOf, childOf } = {}) => {
     if (members.has(handle) || handle === rootHandle || !people.has(handle)) return;
     const birth = birthOf(handle);
     const death = deathOf(handle);
@@ -101,7 +101,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
     if (end != null && end <= bP - LEAD) return;   // starb vor Beginn der Zeitleiste
     if (start > endT) return;                       // kam erst nach Ende hinzu
     if (end != null && end > endT) end = null;      // bleibt bis zum Schluss
-    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP - LEAD), end, exit: end == null ? null : ex, initial: start <= bP - LEAD, birth: startRaw == null && birth != null && start > bP - LEAD, side, ...(partnerOf ? { partnerOf } : {}) });   // birth: Linie entsteht mit der Geburt; partnerOf: Ehepartner eines Nachkommen
+    members.set(handle, { id: handle, name: nm.first, full: nm.full, rel, relKey: rel, group, gender: genderOf(people.get(handle)), start: Math.max(start, bP - LEAD), end, exit: end == null ? null : ex, initial: start <= bP - LEAD, birth: startRaw == null && birth != null && start > bP - LEAD, side, ...(partnerOf ? { partnerOf } : {}), ...(childOf ? { childOf } : {}) });   // birth: Linie entsteht mit der Geburt; partnerOf: Ehepartner eines Nachkommen; childOf: Elternteil eines Enkels
   };
 
   // Seiten (-1 links, +1 rechts): Vater links, Mutter rechts; Großeltern auf der Seite ihres Kindes;
@@ -145,7 +145,7 @@ export function buildModel(tree, rootHandle, opts = {}) {
     }
   }
   if (opts.grandchildren !== false) {
-    for (const [h, m] of [...members]) if (m.group === 4) for (const gh of childrenOf(h)) add(gh, 5, g3(genderOf(people.get(gh)), lang.grandson, lang.granddaughter, lang.grandchild), null, { side: m.side });
+    for (const [h, m] of [...members]) if (m.group === 4) for (const gh of childrenOf(h)) add(gh, 5, g3(genderOf(people.get(gh)), lang.grandson, lang.granddaughter, lang.grandchild), null, { side: m.side, childOf: h });
   }
 
   // Ehepartner der Nachkommen (Schwiegersohn/-tochter, bei Enkeln einfach "Partner")
