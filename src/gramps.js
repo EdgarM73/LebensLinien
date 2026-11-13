@@ -39,7 +39,7 @@ async function getAll(base, token, path) {
 export async function loadTree(cfg) {
   const base = cfg.url.replace(/\/+$/, '');
   const password = cfg.password || process.env.GRAMPS_PASSWORD;
-  if (!cfg.username || !password) throw new Error('username/password fehlen (config.json oder Umgebungsvariable GRAMPS_PASSWORD).');
+  if (!cfg.username || !password) throw new Error('username/password fehlen (config_<name>.json oder Umgebungsvariable GRAMPS_PASSWORD).');
   const { access_token: token } = await api(base, '/api/token/', { method: 'POST', body: { username: cfg.username, password } });
   delete process.env.GRAMPS_PASSWORD;
   const [people, families, events] = await Promise.all([

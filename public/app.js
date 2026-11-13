@@ -6,6 +6,8 @@ const extrasList = document.querySelector('#extras-list');
 const audioInput = document.querySelector('#audio-input');
 let authMode = 'login';
 let suggestedTexts = null;
+let savedSnapshot = '';
+let previousVideo = false;   // gab es vor dem aktuellen Auftrag schon ein Video?
 
 async function request(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers } });
@@ -108,7 +110,69 @@ function showConfig(config, defaults) {
   const ready = Boolean(config.configured);
   document.querySelector('.status-pill').classList.toggle('ready', ready);
   document.querySelector('#connection-status').textContent = ready ? 'Verbindung eingerichtet' : 'Noch nicht eingerichtet';
-  document.querySelector('#generate-button').disabled = !ready;
+  savedSnapshot = JSON.stringify(readConfig());   // Stand der gespeicherten Einstellungen, um Änderungen zu erkennen
+}
+
+// Speichert das Formular. Gibt true zurück, wenn die Einstellungen auf dem Server liegen.
+async function saveConfig() {
+  showError(document.querySelector('#config-error'), '');
+  document.querySelector('#save-message').hidden = true;
+  const button = document.querySelector('#save-button');
+  button.disabled = true;
+  try {
+    const config = await request('/api/config', { method: 'POST', body: JSON.stringify(readConfig()) });
+    const defaults = await request(`/api/texts?lang=${encodeURIComponent(config.lang || 'de')}`);
+    showConfig(config, defaults);
+    document.querySelector('#save-message').hidden = false;
+    return true;
+  } catch (error) {
+    showError(document.querySelector('#config-error'), error.message);
+    return false;
+  } finally { button.disabled = false; }
+}
+
+function showVideo(available) {
+  const video = document.querySelector('#video-preview');
+  document.querySelector('#download-link').hidden = !available;
+  video.hidden = !available;
+  if (available) video.src = `/api/video?v=${Date.now()}`;   // neuer Parameter, damit nicht das alte Video im Player bleibt
+  else video.removeAttribute('src');
+}
+
+// Zeigt den Stand eines Auftrags. Gibt true zurück, solange er noch läuft.
+function showJob(job) {
+  const button = document.querySelector('#generate-button');
+  const bar = document.querySelector('#render-progress');
+  const message = document.querySelector('#render-message');
+  const running = job.state === 'running';
+  button.disabled = running;
+  bar.hidden = !running;
+  message.classList.toggle('render-error', job.state === 'error');
+  if (running) {
+    if (job.phase === 'render') { bar.value = job.progress || 0; message.textContent = `Video wird gerendert … ${job.progress || 0} %`; }
+    else { bar.removeAttribute('value'); message.textContent = 'Stammbaum wird aus Gramps geladen …'; }
+  } else if (job.state === 'done') {
+    message.textContent = 'Dein Video ist fertig.';
+    showVideo(true);
+  } else if (job.state === 'error') {
+    message.textContent = job.error || 'Das Video konnte nicht erstellt werden.';
+    if (previousVideo) showVideo(true);   // das zuletzt erstellte Video gibt es weiterhin
+  }
+  return running;
+}
+
+let pollTimer = null;
+function pollJob() {
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    try {
+      if (showJob(await request('/api/generate'))) pollJob();
+    } catch (error) {
+      // Kurze Aussetzer (Proxy, Neustart) nicht als Fehler werten, weiter nachfragen
+      document.querySelector('#render-message').textContent = `Verbindung unterbrochen, versuche es erneut … (${error.message})`;
+      pollJob();
+    }
+  }, 1500);
 }
 
 function showAudio(name) {
@@ -129,7 +193,10 @@ async function enter(user) {
   const defaults = await request(`/api/texts?lang=${encodeURIComponent(state.config.lang || 'de')}`);
   showConfig(state.config, defaults);
   showAudio(state.audioName);
-  document.querySelector('#download-link').hidden = !state.hasVideo;
+  showVideo(state.hasVideo);
+  // Läuft noch ein Auftrag (z. B. nach dem Neuladen der Seite), den Fortschritt weiter anzeigen
+  if (state.job?.state === 'running' && showJob(state.job)) pollJob();
+  else if (state.job?.state === 'error') showJob(state.job);
 }
 
 async function initialize() {
@@ -160,7 +227,7 @@ document.querySelector('#login-tab').addEventListener('click', () => setMode('lo
 document.querySelector('#register-tab').addEventListener('click', () => setMode('register'));
 document.querySelector('#add-extra').addEventListener('click', () => addExtra());
 
-function updateMainLabel() { configForm.elements.mainLabel.disabled = configForm.elements.names.value !== 'hide'; }
+function updateMainLabel() { document.querySelector('#main-label-field').hidden = configForm.elements.names.value !== 'hide'; }
 configForm.elements.names.addEventListener('change', updateMainLabel);
 updateMainLabel();
 
@@ -233,32 +300,33 @@ document.querySelector('#logout-button').addEventListener('click', async () => {
 
 configForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  showError(document.querySelector('#config-error'), '');
-  document.querySelector('#save-message').hidden = true;
-  const button = document.querySelector('#save-button');
-  button.disabled = true;
-  try {
-    const config = await request('/api/config', { method: 'POST', body: JSON.stringify(readConfig()) });
-    const defaults = await request(`/api/texts?lang=${encodeURIComponent(config.lang || 'de')}`);
-    showConfig(config, defaults);
-    document.querySelector('#save-message').hidden = false;
-  } catch (error) { showError(document.querySelector('#config-error'), error.message); }
-  finally { button.disabled = false; }
+  await saveConfig();
 });
 
 document.querySelector('#generate-button').addEventListener('click', async (event) => {
   const button = event.currentTarget;
   const message = document.querySelector('#render-message');
-  const link = document.querySelector('#download-link');
   button.disabled = true;
-  link.hidden = true;
-  message.textContent = 'Lebenslinien werden berechnet und gerendert. Das kann einige Minuten dauern.';
+  message.classList.remove('render-error');
+  // Das Video entsteht aus den gespeicherten Einstellungen: geänderte Eingaben deshalb zuerst speichern
+  if (JSON.stringify(readConfig()) !== savedSnapshot || document.querySelector('.status-pill:not(.ready)')) {
+    message.textContent = 'Einstellungen werden gespeichert …';
+    if (!await saveConfig()) {
+      message.classList.add('render-error');
+      message.textContent = 'Die Einstellungen konnten nicht gespeichert werden. Bitte die Meldung unter dem Formular beachten.';
+      button.disabled = false;
+      return;
+    }
+  }
   try {
-    await request('/api/generate', { method: 'POST', body: '{}' });
-    message.textContent = 'Dein Video ist fertig.';
-    link.hidden = false;
-  } catch (error) { message.textContent = error.message; }
-  finally { button.disabled = false; }
+    previousVideo = !document.querySelector('#video-preview').hidden;
+    showVideo(false);
+    if (showJob(await request('/api/generate', { method: 'POST', body: '{}' }))) pollJob();
+  } catch (error) {
+    message.classList.add('render-error');
+    message.textContent = error.message;
+    button.disabled = false;
+  }
 });
 
 setMode('login');

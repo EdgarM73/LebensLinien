@@ -2,7 +2,7 @@
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createCipheriv, createDecipheriv } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, createReadStream } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, createReadStream, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LANGS } from './src/i18n.js';
@@ -21,6 +21,7 @@ const SESSION_MS = 12 * 60 * 60 * 1000;
 const sessions = new Map();
 const attempts = new Map();
 const generating = new Set();
+const jobs = new Map();   // userId -> { state: 'running' | 'done' | 'error', phase, progress, error }
 
 class InputError extends Error {}
 
@@ -171,7 +172,25 @@ function validateConfig(input, previous) {
   return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(mainLabel ? { mainLabel } : {}), ...(texts ? { texts } : {}) };
 }
 
-function runGenerator(user, config) {
+// Übersetzt die Ausgabe des Generators in eine Meldung, die der Nutzer sehen darf.
+// Unbekannte Fehler bleiben allgemein, Details stehen nur im Server-Protokoll.
+function friendlyError(error) {
+  const text = String(error?.stderr || '');
+  if (error?.timedOut) return 'Die Videoerzeugung hat das Zeitlimit von 15 Minuten überschritten.';
+  if (text.includes('Niemand gefunden')) return 'Die Hauptperson wurde in Gramps nicht gefunden. Bitte Namen oder Gramps-ID prüfen.';
+  if (text.includes('Mehrere Treffer')) {
+    const hits = text.split('\n').filter((line) => /^\s{2}\S/.test(line)).slice(0, 8).map((line) => line.trim().replace(/\s+/g, ' '));
+    return `Mehrere Personen passen zur Hauptperson. Bitte die Gramps-ID eintragen${hits.length ? ': ' + hits.join(' · ') : '.'}`;
+  }
+  if (text.includes('kein Geburtsjahr')) return 'Für die Hauptperson ist in Gramps kein Geburtsjahr hinterlegt. Bitte ein Geburtsereignis mit Datum anlegen.';
+  if (/\/api\/token\/?: HTTP (400|401|403)/.test(text)) return 'Die Anmeldung bei Gramps ist fehlgeschlagen. Bitte Benutzername und Passwort prüfen.';
+  if (/HTTP 40[13]/.test(text)) return 'Dieser Gramps-Benutzer darf die Stammbaumdaten nicht lesen.';
+  if (/ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|fetch failed|certificate/i.test(text)) return 'Der Gramps-Server ist von hier aus nicht erreichbar. Bitte die Server-URL prüfen.';
+  if (text.includes('Audiodatei')) return 'Die gespeicherte Audiodatei wurde nicht gefunden. Bitte die Musik neu hochladen.';
+  return 'Das Video konnte nicht erstellt werden. Bitte Verbindung und Gramps-Daten prüfen.';
+}
+
+function runGenerator(user, config, onProgress = () => {}) {
   return new Promise((resolve, reject) => {
     const tmpConfig = path.join(DATA, `config-${user.id}-${randomUUID()}.json`);
     const outputName = `${user.id}-${Date.now()}.mp4`;
@@ -181,7 +200,7 @@ function runGenerator(user, config) {
     const args = [path.join(ROOT, 'src', 'index.js'), tmpConfig, '--out', outputPath, '--lang', config.lang];
     if (user.audioFile) {
       const audioPath = path.join(AUDIO_DIR, path.basename(user.audioFile));
-      if (!existsSync(audioPath)) { try { unlinkSync(tmpConfig); } catch {} reject(new Error('Die gespeicherte Audiodatei wurde nicht gefunden.')); return; }
+      if (!existsSync(audioPath)) { try { unlinkSync(tmpConfig); } catch {} reject(Object.assign(new Error('Die gespeicherte Audiodatei wurde nicht gefunden.'), { stderr: 'Audiodatei' })); return; }
       args.push('--audio', audioPath);
     }
     const child = spawn(process.execPath, args, {
@@ -191,20 +210,50 @@ function runGenerator(user, config) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stderr = '';
+    let personName = null;
+    let timedOut = false;
     child.stderr.on('data', (chunk) => { stderr = (stderr + chunk.toString()).slice(-6000); });
-    const timeout = setTimeout(() => child.kill(), 15 * 60 * 1000);
+    // Fortschritt aus der Ausgabe des Generators lesen ("Lade Stammbaum", "Rendere Video", " 42 %")
+    child.stdout.on('data', (chunk) => {
+      const text = chunk.toString();
+      const found = text.match(/^(.+): \d+ Angehörige gefunden\./m);
+      if (found) personName = found[1].trim();
+      if (text.includes('Rendere Video')) onProgress({ phase: 'render', progress: 0 });
+      const percent = [...text.matchAll(/(\d{1,3}) %/g)].pop();
+      if (percent) onProgress({ phase: 'render', progress: Math.min(100, Number(percent[1])) });
+    });
+    const timeout = setTimeout(() => { timedOut = true; child.kill(); }, 15 * 60 * 1000);
     child.on('error', (error) => { clearTimeout(timeout); try { unlinkSync(tmpConfig); } catch {} reject(error); });
     child.on('close', (code) => {
       clearTimeout(timeout);
       try { unlinkSync(tmpConfig); } catch {}
-      if (code === 0 && existsSync(outputPath)) resolve({ outputName });
-      else reject(new Error(code === null ? 'Die Videoerzeugung hat das Zeitlimit überschritten.' : `Videoerzeugung fehlgeschlagen. ${stderr.slice(-1200)}`));
+      if (code === 0 && existsSync(outputPath)) resolve({ outputName, personName });
+      else reject(Object.assign(new Error(timedOut ? 'Die Videoerzeugung hat das Zeitlimit überschritten.' : `Videoerzeugung fehlgeschlagen. ${stderr.slice(-1200)}`), { stderr, timedOut }));
     });
   });
 }
 
-function sendFile(res, file) {
-  res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Disposition': 'attachment; filename="Lebenslinien.mp4"', 'Cache-Control': 'private, no-store' });
+// Liefert das Video aus: mit Range-Unterstützung für die Vorschau im Browser,
+// als Download (attachment) nur auf Wunsch. Der Dateiname ist der Name der Person.
+function sendVideo(req, res, file, name, download) {
+  const size = statSync(file).size;
+  const base = (name || 'Lebenslinien').replace(/[\\/:*?"<>|\r\n]+/g, '').trim() || 'Lebenslinien';
+  const ascii = base.normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '').trim() || 'Lebenslinien';
+  const headers = {
+    'Content-Type': 'video/mp4',
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'private, no-store',
+    'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${ascii}.mp4"; filename*=UTF-8''${encodeURIComponent(base)}.mp4`,
+  };
+  const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+  if (range && (range[1] || range[2])) {
+    let start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+    let end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+    if (start >= size || start > end) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }); return res.end(); }
+    res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 });
+    return createReadStream(file, { start, end }).pipe(res);
+  }
+  res.writeHead(200, { ...headers, 'Content-Length': size });
   createReadStream(file).pipe(res);
 }
 
@@ -279,7 +328,7 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { ok: true }, { 'Set-Cookie': 'lebenslinien_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
     }
     if (!user) return json(res, 401, { error: 'Bitte zuerst anmelden.' });
-    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { username: user.username, registrationKeyRequired: Boolean(process.env.APP_REGISTRATION_KEY), config: publicConfig(user), hasVideo: Boolean(user.lastVideo), audioName: user.audioName || null });
+    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { username: user.username, registrationKeyRequired: Boolean(process.env.APP_REGISTRATION_KEY), config: publicConfig(user), hasVideo: Boolean(user.lastVideo), audioName: user.audioName || null, job: jobs.get(user.id) || { state: 'idle' } });
     if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, publicConfig(user));
     if (req.method === 'POST' && url.pathname === '/api/config') {
       const input = await body(req);
@@ -314,25 +363,30 @@ const server = createServer(async (req, res) => {
       if (generating.size >= 1) return json(res, 503, { error: 'Derzeit wird bereits ein Video erstellt. Bitte später erneut versuchen.' });
       const config = decrypt(user.config);
       if (!config) return json(res, 400, { error: 'Bitte zuerst die Verbindungsdaten speichern.' });
+      // Der Auftrag läuft im Hintergrund weiter; die Oberfläche fragt den Stand über GET /api/generate ab.
       generating.add(user.id);
-      try {
-        const { outputName } = await runGenerator(user, config);
+      const job = { state: 'running', phase: 'load', progress: 0 };
+      jobs.set(user.id, job);
+      runGenerator(user, config, (update) => Object.assign(job, update)).then(({ outputName, personName }) => {
         if (user.lastVideo) {
           try { unlinkSync(path.join(VIDEO_DIR, path.basename(user.lastVideo))); } catch {}
         }
         user.lastVideo = outputName;
+        user.lastVideoName = config.anonymous ? null : personName;   // ohne Namen auch nicht im Dateinamen
         saveUsers();
-        return json(res, 200, { ok: true, video: '/api/video' });
-      } catch (error) {
+        Object.assign(job, { state: 'done', progress: 100 });
+      }).catch((error) => {
         console.error(`Generierung für ${user.username} fehlgeschlagen:`, error.message);
-        return json(res, 500, { error: 'Das Video konnte nicht erstellt werden. Bitte Verbindung und Gramps-Daten prüfen.' });
-      } finally { generating.delete(user.id); }
+        Object.assign(job, { state: 'error', error: friendlyError(error) });
+      }).finally(() => generating.delete(user.id));
+      return json(res, 202, job);
     }
+    if (req.method === 'GET' && url.pathname === '/api/generate') return json(res, 200, jobs.get(user.id) || { state: 'idle' });
     if (req.method === 'GET' && url.pathname === '/api/video') {
       if (!user.lastVideo) return json(res, 404, { error: 'Noch kein Video vorhanden.' });
       const file = path.join(VIDEO_DIR, path.basename(user.lastVideo));
       if (!existsSync(file)) return json(res, 404, { error: 'Video wurde nicht gefunden.' });
-      return sendFile(res, file);
+      return sendVideo(req, res, file, user.lastVideoName, url.searchParams.get('download') === '1');
     }
     return json(res, 404, { error: 'Nicht gefunden.' });
   } catch (error) {

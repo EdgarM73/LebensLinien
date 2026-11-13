@@ -35,7 +35,7 @@ Idee: [@SecretFire79](https://x.com/SecretFire79)
 
 ## Weboberfläche
 
-- Registrierung mit Einladungscode, Passwort mindestens 12 Zeichen.
+- Registrierung mit Einladungscode, Passwort mindestens 8 Zeichen.
 - Gramps-Zugangsdaten werden **verschlüsselt** (AES-256-GCM) gespeichert, Kontopasswörter als scrypt-Hash.
 - Pro Konto: Gramps-Verbindung, Hauptperson, Sprache, Namen anzeigen oder nicht, Bezeichnung der Hauptperson, Zusatzpersonen,
   Schlusstext, Hintergrundmusik (bis 50 MB) und das zuletzt erstellte Video.

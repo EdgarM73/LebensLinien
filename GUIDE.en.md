@@ -148,7 +148,7 @@ The interface should **never** be exposed to the internet unprotected. At least 
 
 ## 5. Using it
 
-1. **Register** (first time): enter a user name (3 to 40 characters), a password (at least 12 characters) and the invitation code.
+1. **Register** (first time): enter a user name (3 to 40 characters), a password (at least 8 characters) and the invitation code.
    This account belongs to Lebenslinien only and has nothing to do with Gramps.
 2. **01 Gramps-Verbindung (Gramps connection):** server URL (HTTPS), Gramps user name and password, **Hauptperson (main person)**
    (preferably the Gramps ID, e.g. `I0044`; a name with several matches aborts), the **Sprache (language)** (Deutsch, English, Türkçe,
@@ -182,7 +182,7 @@ after 20 failed sign-in attempts within 15 minutes an IP is blocked, sessions ex
 | "Für Gramps-Verbindungen ist HTTPS erforderlich" (HTTPS is required) | Enter an HTTPS address (e.g. via your reverse proxy). `http://` only works for `localhost`. |
 | "Dieser Gramps-Server ist nicht freigegeben" (server not allowed) | The host name is not listed in `APP_ALLOWED_GRAMPS_HOSTS`. |
 | `ECONNREFUSED` or "fetch failed" | Gramps is not reachable from this machine/container. Internal Docker IPs do not work, use the public address. Inside the container `localhost` points at the container itself. |
-| "Videoerzeugung fehlgeschlagen" (video creation failed) | Check credentials, URL and main person. Details are in the log (`docker compose logs`). For security the web interface only shows a general message. |
+| "Videoerzeugung fehlgeschlagen" (video creation failed) | Check credentials, URL and main person. The web interface names known causes directly (person not found, Gramps sign-in failed, server unreachable). For anything else the details are in the log (`docker compose logs`). |
 | "Mehrere Treffer" (several matches) / "Niemand gefunden" (nobody found) | Enter the Gramps ID instead of the name for the main person. |
 | "kein Geburtsjahr hinterlegt" (no birth year) | Create a birth event with a date for the main person in Gramps. |
 | "Derzeit wird bereits ein Video erstellt" (a video is already being created) | Another video is running. Wait briefly and try again. |

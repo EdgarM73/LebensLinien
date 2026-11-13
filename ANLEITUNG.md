@@ -177,7 +177,7 @@ nach 20 falschen Anmelde-Versuchen innerhalb von 15 Minuten wird eine IP gesperr
 | „Für Gramps-Verbindungen ist HTTPS erforderlich“ | Eine HTTPS-Adresse eintragen (z. B. über deinen Reverse Proxy). `http://` geht nur für `localhost`. |
 | „Dieser Gramps-Server ist nicht freigegeben“ | Der Hostname steht nicht in `APP_ALLOWED_GRAMPS_HOSTS`. |
 | `ECONNREFUSED` oder „fetch failed“ | Gramps ist von diesem Rechner/Container aus nicht erreichbar. Interne Docker-IPs funktionieren nicht, nimm die öffentliche Adresse. Im Container zeigt `localhost` auf den Container selbst. |
-| „Videoerzeugung fehlgeschlagen“ | Zugangsdaten, URL und Hauptperson prüfen. Details stehen im Protokoll (`docker compose logs`). Die Weboberfläche zeigt aus Sicherheitsgründen nur eine allgemeine Meldung. |
+| „Videoerzeugung fehlgeschlagen“ | Zugangsdaten, URL und Hauptperson prüfen. Die Weboberfläche nennt bekannte Ursachen direkt (Person nicht gefunden, Anmeldung bei Gramps fehlgeschlagen, Server nicht erreichbar). Bei allem anderen stehen die Details im Protokoll (`docker compose logs`). |
 | „Mehrere Treffer“ / „Niemand gefunden“ | Bei der Hauptperson die Gramps-ID statt des Namens eintragen. |
 | „kein Geburtsjahr hinterlegt“ | In Gramps ein Geburtsereignis mit Datum für die Hauptperson anlegen. |
 | „Derzeit wird bereits ein Video erstellt“ | Es läuft gerade ein anderes Video. Kurz warten und erneut versuchen. |

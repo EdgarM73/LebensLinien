@@ -35,7 +35,7 @@ Idea: [@SecretFire79](https://x.com/SecretFire79)
 
 ## Web interface
 
-- Registration with an invitation code, password of at least 12 characters.
+- Registration with an invitation code, password of at least 8 characters.
 - Gramps credentials are stored **encrypted** (AES-256-GCM), account passwords as scrypt hashes.
 - Per account: Gramps connection, main person, language, show names or not, label of the main person, additional people,
   closing text, background music (up to 50 MB) and the most recently created video.

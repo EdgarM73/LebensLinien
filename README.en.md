@@ -63,7 +63,7 @@ npm run web
 ```
 
 Then open `http://127.0.0.1:3000`. Node.js 18 or newer, `npm install` and `ffmpeg` on the PATH are required. New accounts need
-a password of at least 12 characters. To protect against open registration, set an invitation code before starting:
+a password of at least 8 characters. To protect against open registration, set an invitation code before starting:
 
 ```powershell
 $env:APP_REGISTRATION_KEY = "a-long-random-code"

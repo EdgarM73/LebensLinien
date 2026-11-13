@@ -58,7 +58,7 @@
               <label class="field-wide">Hauptperson<input name="person" placeholder="Gramps-ID oder Name" required><small>Eine Gramps-ID ist eindeutig, z. B. I0044.</small></label>
               <label>Sprache<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
               <label>Namen<select name="names"><option value="show">Mit Namen</option><option value="hide">Ohne Namen (Ich, Ehefrau, Sohn …)</option></select></label>
-              <label>Bezeichnung der Hauptperson<input name="mainLabel" maxlength="40" placeholder="z. B. Opa, Mama, Ich"><small>Nur bei „Ohne Namen“. Leer = „Ich“.</small></label>
+              <label id="main-label-field" hidden>Bezeichnung der Hauptperson<input name="mainLabel" maxlength="40" placeholder="z. B. Opa, Mama, Ich"><small>Leer = „Ich“.</small></label>
               <div class="field-wide audio-upload"><label for="audio-input">Hintergrundmusik</label><div class="audio-control"><input id="audio-input" type="file" accept=".mp3,.wav,.m4a,.mp4,.aac,.ogg,.flac,audio/*"><button class="button-audio-remove" id="audio-remove" type="button" hidden>Entfernen</button></div><small id="audio-status" role="status">Optional · MP3, WAV, M4A, AAC, OGG oder FLAC · maximal 50 MB</small></div>
             </div>
           </section>
@@ -86,9 +86,11 @@
           <div class="render-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="orbit orbit-three"></span><span class="orbit-core"></span><span class="orbit-star star-a"></span><span class="orbit-star star-b"></span><span class="orbit-star star-c"></span></div>
           <p class="eyebrow">Bereit, wenn du es bist</p><h2>Deine Geschichte<br>in Bewegung.</h2>
           <p class="render-copy">Die Lebenslinien entstehen aus den Daten deiner Hauptperson und den hinzugefügten Wegbegleitern.</p>
-          <button class="button button-primary render-button" id="generate-button" type="button" disabled>Video erstellen <span aria-hidden="true">↗</span></button>
+          <button class="button button-primary render-button" id="generate-button" type="button">Video erstellen <span aria-hidden="true">↗</span></button>
+          <progress class="render-progress" id="render-progress" max="100" value="0" aria-label="Fortschritt der Videoerstellung" hidden></progress>
           <p class="render-message" id="render-message" role="status" aria-live="polite"></p>
-          <a class="button button-download" id="download-link" href="/api/video" hidden>Video herunterladen <span aria-hidden="true">↓</span></a>
+          <video class="video-preview" id="video-preview" controls playsinline preload="metadata" aria-label="Vorschau des erstellten Videos" hidden></video>
+          <a class="button button-download" id="download-link" href="/api/video?download=1" hidden>Video herunterladen <span aria-hidden="true">↓</span></a>
         </aside>
       </div>
     </section>
