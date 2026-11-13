@@ -2,6 +2,48 @@
 
 **Deutsch** · [English](RELEASE_NOTES.en.md)
 
+## Version 2026.11.02
+
+Veröffentlicht am 13. November 2026. Videos haben jetzt von Haus aus Musik, und das fertige Docker-Image entsteht automatisch mit jedem Release.
+
+### Highlights
+
+- **Standardmusik „Journey of Life“:** Ohne eigene Musik läuft jetzt dieses Stück unter jedem Video (mit Suno erstellt).
+- **Fertiges Docker-Image** [`ghcr.io/edgarm73/lebenslinien`](https://github.com/EdgarM73/LebensLinien/pkgs/container/lebenslinien) für amd64 und arm64, gebaut bei jedem Release.
+- **Überarbeitetes README** mit Funktionsübersicht, Docker-Schnellstart und Vorschau aus erfundenen Beispieldaten.
+
+### Musik
+
+- Ohne eigene Datei läuft die Standardmusik; eigene Musik hat weiterhin Vorrang.
+- Abschalten: „Ohne Musik“ in der Weboberfläche, `--no-audio` bzw. `"audio": false` auf der Kommandozeile.
+- Ist das Video länger als das Musikstück, wird die Musik wiederholt. Bisher endete das Video in diesem Fall mit der Musik (gilt auch für eigene Musik).
+
+### Docker
+
+- Neue Images entstehen automatisch bei jedem Release-Tag, getaggt mit der Version und `latest`:
+
+  ```bash
+  docker pull ghcr.io/edgarm73/lebenslinien:2026.11.02
+  ```
+
+- `compose.yaml` nennt das fertige Image: `docker compose pull && docker compose up -d`. Selbst bauen geht weiter mit `docker compose up --build -d`.
+- Das Image ist kleiner, weil Vorschau-GIFs und Werbematerial nicht mehr mitkopiert werden.
+
+### Dokumentation
+
+- README (Deutsch und Englisch) neu gegliedert: Abzeichen, Funktionen, Docker-Schnellstart (auch als eigenständige `compose.yaml`), Weboberfläche, Optionstabelle für die Kommandozeile.
+- Die Vorschau zeigt jetzt ein Video mit erfundenen Personen, auf Deutsch und Englisch.
+- Anleitung und Guide beschreiben das fertige Image und die Standardmusik.
+
+### Hinweise zum Update
+
+- Wer bisher selbst baut, kann das weiter tun. Für das fertige Image: `docker compose pull && docker compose up -d`.
+- Bestehende Konten ohne eigene Musik bekommen ab jetzt die Standardmusik. Wer das nicht möchte, setzt „Ohne Musik“.
+
+**Alle Änderungen:** [v2026.11.01…v2026.11.02](https://github.com/EdgarM73/LebensLinien/compare/v2026.11.01...v2026.11.02)
+
+---
+
 ## Version 2026.11.01
 
 Veröffentlicht am 13. November 2026. Dieses Release macht die Weboberfläche alltagstauglich: Videos entstehen im Hintergrund,

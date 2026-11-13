@@ -2,6 +2,48 @@
 
 [Deutsch](RELEASE_NOTES.md) · **English**
 
+## Version 2026.11.02
+
+Released on 13 November 2026. Videos now come with music out of the box, and the ready-made Docker image is built automatically with every release.
+
+### Highlights
+
+- **Default music "Journey of Life":** without your own music, this track now plays under every video (made with Suno).
+- **Ready-made Docker image** [`ghcr.io/edgarm73/lebenslinien`](https://github.com/EdgarM73/LebensLinien/pkgs/container/lebenslinien) for amd64 and arm64, built for every release.
+- **Reworked README** with a feature overview, Docker quick start and a preview made from invented sample data.
+
+### Music
+
+- Without your own file the default music plays; your own music still takes precedence.
+- Turn it off: "Ohne Musik" (no music) in the web interface, `--no-audio` or `"audio": false` on the command line.
+- If the video is longer than the track, the music repeats. Previously the video ended with the music in that case (also applies to your own music).
+
+### Docker
+
+- New images are built automatically for every release tag, tagged with the version and `latest`:
+
+  ```bash
+  docker pull ghcr.io/edgarm73/lebenslinien:2026.11.02
+  ```
+
+- `compose.yaml` names the ready-made image: `docker compose pull && docker compose up -d`. Building it yourself still works with `docker compose up --build -d`.
+- The image is smaller because preview GIFs and promotional material are no longer copied into it.
+
+### Documentation
+
+- README (German and English) restructured: badges, features, Docker quick start (also as a standalone `compose.yaml`), web interface, option table for the command line.
+- The preview now shows a video with invented people, in German and English.
+- The guides describe the ready-made image and the default music.
+
+### Upgrade notes
+
+- If you build the image yourself, you can keep doing so. For the ready-made image: `docker compose pull && docker compose up -d`.
+- Existing accounts without their own music now get the default music. If you don't want that, tick "Ohne Musik" (no music).
+
+**All changes:** [v2026.11.01…v2026.11.02](https://github.com/EdgarM73/LebensLinien/compare/v2026.11.01...v2026.11.02)
+
+---
+
 ## Version 2026.11.01
 
 Released on 13 November 2026. This release makes the web interface ready for everyday use: videos are created in the background,
