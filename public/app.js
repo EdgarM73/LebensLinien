@@ -148,13 +148,27 @@ function showJob(job) {
   const button = document.querySelector('#generate-button');
   const bar = document.querySelector('#render-progress');
   const message = document.querySelector('#render-message');
+  const banner = document.querySelector('#job-banner');
+  const bannerText = document.querySelector('#job-banner-text');
   const running = job.state === 'running';
-  button.disabled = running;
+  const busy = !running && job.busy === true;   // gerade entsteht das Video eines anderen Kontos
+  button.disabled = running || busy;
   bar.hidden = !running;
+  banner.hidden = !running && !busy;
+  banner.classList.toggle('job-banner-busy', busy);
+  document.querySelector('#job-banner-link').hidden = busy;
+  if (running) {
+    // Während das neue Video entsteht, nicht das alte Video anbieten
+    document.querySelector('#video-preview').hidden = true;
+    document.querySelector('#download-link').hidden = true;
+  }
   message.classList.toggle('render-error', job.state === 'error');
   if (running) {
     if (job.phase === 'render') { bar.value = job.progress || 0; message.textContent = `Video wird gerendert … ${job.progress || 0} %`; }
     else { bar.removeAttribute('value'); message.textContent = 'Stammbaum wird aus Gramps geladen …'; }
+    bannerText.textContent = job.phase === 'render' ? `Dein Video wird gerade erstellt … ${job.progress || 0} %` : 'Dein Video wird gerade erstellt. Der Stammbaum wird aus Gramps geladen …';
+  } else if (busy) {
+    bannerText.textContent = 'Gerade wird das Video eines anderen Kontos erstellt. Danach kannst du dein Video starten.';
   } else if (job.state === 'done') {
     message.textContent = 'Dein Video ist fertig.';
     showVideo(true);
@@ -162,7 +176,7 @@ function showJob(job) {
     message.textContent = job.error || 'Das Video konnte nicht erstellt werden.';
     if (previousVideo) showVideo(true);   // das zuletzt erstellte Video gibt es weiterhin
   }
-  return running;
+  return running || busy;   // auch bei "busy" weiter nachfragen, bis der Server frei ist
 }
 
 let pollTimer = null;
@@ -198,9 +212,9 @@ async function enter(user) {
   showConfig(state.config, defaults);
   showAudio(state.audioName);
   showVideo(state.hasVideo);
-  // Läuft noch ein Auftrag (z. B. nach dem Neuladen der Seite), den Fortschritt weiter anzeigen
-  if (state.job?.state === 'running' && showJob(state.job)) pollJob();
-  else if (state.job?.state === 'error') showJob(state.job);
+  // Läuft noch ein Auftrag (z. B. nach dem Neuladen der Seite) oder das Video eines anderen Kontos, das anzeigen
+  const job = state.job || {};
+  if ((job.state === 'running' || job.state === 'error' || job.busy) && showJob(job)) pollJob();
 }
 
 async function initialize() {

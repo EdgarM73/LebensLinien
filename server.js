@@ -75,6 +75,11 @@ if (users.some((user) => user.pendingJob)) {
   saveUsers();
 }
 
+// Stand für die Oberfläche: eigener Auftrag, dazu busy = gerade entsteht das Video eines anderen Kontos
+function jobState(user) {
+  return { ...(jobs.get(user.id) || { state: 'idle' }), busy: generating.size > 0 && !generating.has(user.id) };
+}
+
 function passwordMatches(user, password) {
   const hash = scryptSync(password, Buffer.from(user.salt, 'base64'), 64);
   return timingSafeEqual(hash, Buffer.from(user.passwordHash, 'base64'));
@@ -473,7 +478,7 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { ok: true }, { 'Set-Cookie': 'lebenslinien_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
     }
     if (!user) return json(res, 401, { error: 'Bitte zuerst anmelden.' });
-    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { username: user.username, registrationKeyRequired: Boolean(process.env.APP_REGISTRATION_KEY), config: publicConfig(user), hasVideo: Boolean(user.lastVideo), audioName: user.audioName || null, job: jobs.get(user.id) || { state: 'idle' } });
+    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { username: user.username, registrationKeyRequired: Boolean(process.env.APP_REGISTRATION_KEY), config: publicConfig(user), hasVideo: Boolean(user.lastVideo), audioName: user.audioName || null, job: jobState(user) });
     if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, publicConfig(user));
     if (req.method === 'POST' && url.pathname === '/api/config') {
       const input = await body(req);
@@ -587,7 +592,7 @@ const server = createServer(async (req, res) => {
       });
       return json(res, 202, job);
     }
-    if (req.method === 'GET' && url.pathname === '/api/generate') return json(res, 200, jobs.get(user.id) || { state: 'idle' });
+    if (req.method === 'GET' && url.pathname === '/api/generate') return json(res, 200, jobState(user));
     if (req.method === 'POST' && url.pathname === '/api/preview') {
       const input = await body(req);
       const position = input.position === 'middle' ? 'middle' : 'end';

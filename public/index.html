@@ -71,6 +71,7 @@
         <div><p class="eyebrow">Dein Studio</p><h1>Video einrichten</h1></div>
         <div class="status-pill"><span class="status-dot"></span><span id="connection-status">Noch nicht eingerichtet</span></div>
       </div>
+      <div class="job-banner" id="job-banner" role="status" aria-live="polite" hidden><span class="job-pulse" aria-hidden="true"></span><span id="job-banner-text"></span><a href="#render-panel" id="job-banner-link">Zum Video</a></div>
       <div class="workspace-grid">
         <form class="setup-form" id="config-form">
           <section class="form-section">
@@ -114,7 +115,7 @@
           <div class="form-actions"><p class="form-error" id="config-error" role="alert" hidden></p><p class="success-message" id="save-message" role="status" hidden>Änderungen gespeichert.</p><button class="button button-secondary" type="submit" id="save-button">Einstellungen speichern</button></div>
         </form>
 
-        <aside class="render-panel">
+        <aside class="render-panel" id="render-panel">
           <div class="render-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="orbit orbit-three"></span><span class="orbit-core"></span><span class="orbit-star star-a"></span><span class="orbit-star star-b"></span><span class="orbit-star star-c"></span></div>
           <p class="eyebrow">Bereit, wenn du es bist</p><h2>Deine Geschichte<br>in Bewegung.</h2>
           <p class="render-copy">Die Lebenslinien entstehen aus den Daten deiner Hauptperson und den hinzugefügten Wegbegleitern.</p>

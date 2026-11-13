@@ -82,6 +82,12 @@ input::placeholder { color: #a0aaa1; }
 .status-pill { display: inline-flex; align-items: center; gap: 9px; padding-bottom: 7px; color: var(--muted); font-size: 12px; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #a5aaa3; }
 .status-pill.ready .status-dot { background: #779c4c; box-shadow: 0 0 0 3px rgba(119,156,76,.14); }
+.job-banner { display: flex; align-items: center; gap: 12px; margin: 22px 0 0; padding: 13px 16px; border-left: 3px solid #557c57; background: #e7e9dc; font-size: 13px; line-height: 1.5; }
+.job-banner.job-banner-busy { border-left-color: var(--coral); }
+.job-banner a { margin-left: auto; color: #3f6141; font-weight: 700; white-space: nowrap; }
+.job-pulse { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: #779c4c; animation: pulse 1.6s ease-in-out infinite; }
+.job-banner-busy .job-pulse { background: var(--coral); }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
 .workspace-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .8fr); gap: clamp(36px, 7vw, 96px); align-items: start; }
 .setup-form { min-width: 0; }
 .form-section { padding: 32px 0 30px; border-bottom: 1px solid var(--line); }

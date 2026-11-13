@@ -127,6 +127,9 @@ const UI_EN = {
   'Vorschaubild des Videos': 'Preview image of the video',
   'Vorschau des erstellten Videos': 'Preview of the created video',
   'Video herunterladen': 'Download video',
+  'Zum Video': 'Go to video',
+  'Dein Video wird gerade erstellt. Der Stammbaum wird aus Gramps geladen …': 'Your video is being created. Loading the family tree from Gramps …',
+  'Gerade wird das Video eines anderen Kontos erstellt. Danach kannst du dein Video starten.': "Another account's video is being created right now. You can start yours afterwards.",
 };
 
 // Texte mit eingesetzten Werten
@@ -135,6 +138,7 @@ const UI_EN_PATTERNS = [
   [/^Server nicht erreichbar: (.*)$/, 'Server unreachable: $1'],
   [/^Gespeichert: (.*)$/, 'Stored: $1'],
   [/^Video wird gerendert … (\d+) %$/, 'Rendering the video … $1 %'],
+  [/^Dein Video wird gerade erstellt … (\d+) %$/, 'Your video is being created … $1 %'],
   [/^Verbindung unterbrochen, versuche es erneut … \((.*)\)$/, 'Connection interrupted, trying again … ($1)'],
   [/^Verbindung steht\. 1 Person im Stammbaum\.$/, 'The connection works. 1 person in the family tree.'],
   [/^Verbindung steht\. (\d+) Personen im Stammbaum\.$/, 'The connection works. $1 people in the family tree.'],
