@@ -6,6 +6,9 @@ Turns one person from **Gramps Web** into a portrait video (1080×1920): every c
 New people swing into your life (births, marriages), people who have died rise as stars, and in the end everything
 joins into a constellation.
 
+<p align="center"><img src="Lebenslinien-en.gif" width="270" alt="Example: life lines video with invented data"></p>
+<p align="center"><sub>Example with invented data (sped up)</sub></p>
+
 Idea: [@SecretFire79](https://x.com/SecretFire79)
 
 **Running it as a web server or container:** see [GUIDE.en.md](GUIDE.en.md) (requirements, Docker, local start, troubleshooting).

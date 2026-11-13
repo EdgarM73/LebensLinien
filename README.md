@@ -6,6 +6,9 @@ Erzeugt aus einer Person in **Gramps Web** ein Hochformat-Video (1080×1920): Je
 engeren Familie ist ein leuchtender Faden. Neue Menschen schwingen in dein Leben (Geburt, Hochzeit),
 Verstorbene steigen als Sterne auf, am Ende verbindet sich alles zu einem Sternbild.
 
+<p align="center"><img src="Lebenslinien.gif" width="270" alt="Beispiel: Lebenslinien-Video mit erfundenen Daten"></p>
+<p align="center"><sub>Beispiel mit erfundenen Daten (beschleunigt) · <a href="Lebenslinien.mp4">Video ansehen</a></sub></p>
+
 **Betrieb als Webserver oder Container:** siehe [ANLEITUNG.md](ANLEITUNG.md) (Voraussetzungen, Docker, lokaler Start, Fehlerhilfe).
 
 ## Voraussetzungen
