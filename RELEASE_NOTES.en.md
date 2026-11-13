@@ -2,7 +2,7 @@
 
 [Deutsch](RELEASE_NOTES.md) · **English**
 
-## Version 2026.11.13
+## Version 2026.11.01
 
 Released on 13 November 2026. This release makes the web interface ready for everyday use: videos are created in the background,
 errors are explained clearly, and much can be checked in advance. In the video, couples and families now visibly stand together.
@@ -56,7 +56,7 @@ errors are explained clearly, and much can be checked in advance. In the video, 
 - Account passwords: at least 8 characters (the 2026.10.01 documentation wrongly said 12).
 - The Turkish and Bosnian texts have still not been proofread by native speakers.
 
-**All changes:** [v2026.10.01…v2026.11.13](https://github.com/EdgarM73/LebensLinien/compare/v2026.10.01...v2026.11.13)
+**All changes:** [v2026.10.01…v2026.11.01](https://github.com/EdgarM73/LebensLinien/compare/v2026.10.01...v2026.11.01)
 
 ---
 

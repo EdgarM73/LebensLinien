@@ -2,7 +2,7 @@
 
 **Deutsch** · [English](RELEASE_NOTES.en.md)
 
-## Version 2026.11.13
+## Version 2026.11.01
 
 Veröffentlicht am 13. November 2026. Dieses Release macht die Weboberfläche alltagstauglich: Videos entstehen im Hintergrund,
 Fehler werden verständlich erklärt, und vieles lässt sich vorab prüfen. Im Video stehen Paare und Familien jetzt sichtbar zusammen.
@@ -56,7 +56,7 @@ Fehler werden verständlich erklärt, und vieles lässt sich vorab prüfen. Im V
 - Kontopasswörter: mindestens 8 Zeichen (die Doku von 2026.10.01 nannte fälschlich 12).
 - Die türkischen und bosnischen Texte sind weiterhin nicht von Muttersprachlern gegengelesen.
 
-**Alle Änderungen:** [v2026.10.01…v2026.11.13](https://github.com/EdgarM73/LebensLinien/compare/v2026.10.01...v2026.11.13)
+**Alle Änderungen:** [v2026.10.01…v2026.11.01](https://github.com/EdgarM73/LebensLinien/compare/v2026.10.01...v2026.11.01)
 
 ---
 
