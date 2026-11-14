@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LANGS } from './src/i18n.js';
 import { grampsLogin, listPeople } from './src/gramps.js';
+import { decodeGedcom, parseGedcom, loadGedcom, listGedcomPeople } from './src/gedcom.js';
 import { translateMessage } from './src/messages.js';
 import { consumePasswordReset } from './src/password-reset.js';
 
@@ -14,6 +15,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.resolve(process.env.APP_DATA_DIR || path.join(ROOT, 'data'));
 const VIDEO_DIR = path.join(DATA, 'videos');
 const AUDIO_DIR = path.join(DATA, 'audio');
+const GEDCOM_DIR = path.join(DATA, 'gedcom');
 const PREVIEW_DIR = path.join(DATA, 'previews');
 const RESET_DIR = path.join(DATA, 'password-resets');
 const USERS_FILE = path.join(DATA, 'users.json');
@@ -34,6 +36,7 @@ class InputError extends Error {}
 
 mkdirSync(VIDEO_DIR, { recursive: true });
 mkdirSync(AUDIO_DIR, { recursive: true });
+mkdirSync(GEDCOM_DIR, { recursive: true });
 mkdirSync(PREVIEW_DIR, { recursive: true });
 const key = process.env.APP_KEY
   ? Buffer.from(process.env.APP_KEY, 'base64')
@@ -90,8 +93,8 @@ function passwordMatches(user, password) {
 function cleanupFiles() {
   const now = Date.now();
   const age = (file) => { try { return now - statSync(file).mtimeMs; } catch { return 0; } };
-  const referenced = new Set(users.flatMap((user) => [user.lastVideo, user.audioFile, `${user.id}.png`]).filter(Boolean).map((name) => path.basename(name)));
-  for (const dir of [VIDEO_DIR, AUDIO_DIR, PREVIEW_DIR]) {
+  const referenced = new Set(users.flatMap((user) => [user.lastVideo, user.audioFile, `${user.id}.png`, `${user.id}.ged`]).filter(Boolean).map((name) => path.basename(name)));
+  for (const dir of [VIDEO_DIR, AUDIO_DIR, PREVIEW_DIR, GEDCOM_DIR]) {
     for (const name of readdirSync(dir)) {
       // Eine Stunde Schonfrist: ein Video, das gerade entsteht, gehört noch zu keinem Konto
       if (!referenced.has(name) && age(path.join(dir, name)) > 60 * 60 * 1000) { try { unlinkSync(path.join(dir, name)); } catch {} }
@@ -154,17 +157,18 @@ async function body(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
-async function binaryBody(req, maxBytes) {
+async function binaryBody(req, maxBytes, kind = 'Audiodatei') {
+  const tooLarge = kind === 'GEDCOM-Datei' ? 'Die GEDCOM-Datei darf höchstens 50 MB groß sein.' : 'Die Audiodatei darf höchstens 50 MB groß sein.';
   const declaredLength = Number(req.headers['content-length'] || 0);
-  if (declaredLength > maxBytes) throw new InputError('Die Audiodatei darf höchstens 50 MB groß sein.');
+  if (declaredLength > maxBytes) throw new InputError(tooLarge);
   const chunks = [];
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > maxBytes) throw new InputError('Die Audiodatei darf höchstens 50 MB groß sein.');
+    if (size > maxBytes) throw new InputError(tooLarge);
     chunks.push(chunk);
   }
-  if (!size) throw new InputError('Die Audiodatei ist leer.');
+  if (!size) throw new InputError(kind === 'GEDCOM-Datei' ? 'Die GEDCOM-Datei ist leer.' : 'Die Audiodatei ist leer.');
   return Buffer.concat(chunks, size);
 }
 
@@ -276,12 +280,34 @@ async function grampsPeople(user, access) {
   return people;
 }
 
+const gedcomFile = (user) => path.join(GEDCOM_DIR, `${user.id}.ged`);
+function gedcomPeople(user) {
+  const file = gedcomFile(user);
+  if (!existsSync(file)) throw new InputError('Bitte zuerst eine GEDCOM-Datei hochladen.');
+  const key = `gedcom|${statSync(file).mtimeMs}`;
+  const cached = peopleCache.get(user.id);
+  if (cached && cached.key === key) return cached.people;
+  const people = listGedcomPeople(loadGedcom(file));
+  peopleCache.set(user.id, { key, expires: Infinity, people });
+  return people;
+}
+// Personen für Test und Suche: aus der Datei oder von Gramps Web, je nach gewählter Quelle
+const peopleFor = async (user, input) => (input.source === 'gedcom' ? gedcomPeople(user) : grampsPeople(user, grampsAccess(input, user)));
+
 function validateConfig(input, previous) {
-  const url = validateGrampsUrl(input.url);
-  const username = String(input.username || '').trim();
+  const source = input.source === 'gedcom' ? 'gedcom' : 'gramps';
   const person = String(input.person || '').trim();
-  const password = String(input.password || '') || previous?.password || '';
-  if (!username || !person || !password) throw new InputError('URL, Benutzername, Hauptperson und Passwort sind erforderlich.');
+  let url = '', username = '', password = '';
+  if (source === 'gramps') {
+    url = validateGrampsUrl(input.url);
+    username = String(input.username || '').trim();
+    password = String(input.password || '') || previous?.password || '';
+    if (!username || !person || !password) throw new InputError('URL, Benutzername, Hauptperson und Passwort sind erforderlich.');
+  } else {
+    // Gramps-Zugang bleibt gespeichert, falls man später zurückwechselt
+    url = previous?.url || ''; username = previous?.username || ''; password = previous?.password || '';
+    if (!person) throw new InputError('Bitte die Hauptperson angeben.');
+  }
   if (username.length > 160 || person.length > 160 || password.length > 512) throw new InputError('Ein Eingabefeld ist zu lang.');
   const lang = ['de', 'en', 'tr', 'bs'].includes(input.lang) ? input.lang : 'de';
   if (Array.isArray(input.extras) && input.extras.length > 200) throw new InputError('Es können höchstens 200 Zusatzpersonen gespeichert werden.');
@@ -310,7 +336,7 @@ function validateConfig(input, previous) {
   const secondsRaw = String(input.seconds ?? '').trim();
   const seconds = secondsRaw ? Number(secondsRaw) : null;
   if (secondsRaw && !(Number.isInteger(seconds) && seconds >= 20 && seconds <= 180)) throw new InputError('Die Dauer muss eine ganze Zahl zwischen 20 und 180 Sekunden sein (leer = automatisch).');
-  return { url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(input.noMusic === true ? { noMusic: true } : {}), ...(mainLabel ? { mainLabel } : {}), ...(input.grandchildren === false ? { grandchildren: false } : {}), ...(seconds ? { seconds } : {}), ...(texts ? { texts } : {}) };
+  return { ...(source === 'gedcom' ? { source } : {}), url, username, password, person, lang, extras, anonymous: input.anonymous === true, ...(input.noMusic === true ? { noMusic: true } : {}), ...(mainLabel ? { mainLabel } : {}), ...(input.grandchildren === false ? { grandchildren: false } : {}), ...(seconds ? { seconds } : {}), ...(texts ? { texts } : {}) };
 }
 
 // Übersetzt die Ausgabe des Generators in eine Meldung, die der Nutzer sehen darf.
@@ -323,6 +349,8 @@ function friendlyError(error, fallback = 'Das Video konnte nicht erstellt werden
     const hits = text.split('\n').filter((line) => /^\s{2}\S/.test(line)).slice(0, 8).map((line) => line.trim().replace(/\s+/g, ' '));
     return `Mehrere Personen passen zur Hauptperson. Bitte die Gramps-ID eintragen${hits.length ? ': ' + hits.join(' · ') : '.'}`;
   }
+  if (text.includes('GEDCOM-Datei nicht gefunden')) return 'Die GEDCOM-Datei wurde nicht gefunden. Bitte erneut hochladen.';
+  if (text.includes('GEDCOM: keine Personen')) return 'Die Datei enthält keine Personen. Bitte eine GEDCOM-Datei (.ged) hochladen.';
   if (text.includes('kein Geburtsjahr')) return 'Für die Hauptperson ist in Gramps kein Geburtsjahr hinterlegt. Bitte ein Geburtsereignis mit Datum anlegen.';
   if (/\/api\/token\/?: HTTP (400|401|403)/.test(text)) return 'Die Anmeldung bei Gramps ist fehlgeschlagen. Bitte Benutzername und Passwort prüfen.';
   if (/HTTP 429/.test(text)) return 'Gramps nimmt gerade keine weiteren Anfragen an (zu viele in kurzer Zeit). Bitte einen Moment warten und erneut versuchen.';
@@ -340,6 +368,11 @@ function runGenerator(user, config, onProgress = () => {}, still = null) {
     const outputName = still ? `${user.id}.png` : `${user.id}-${Date.now()}.mp4`;
     const outputPath = path.join(still ? PREVIEW_DIR : VIDEO_DIR, outputName);
     const { password, ...nonSecretConfig } = config;
+    if (config.source === 'gedcom') {
+      if (!existsSync(gedcomFile(user))) { reject(Object.assign(new Error('GEDCOM-Datei fehlt.'), { stderr: 'GEDCOM-Datei nicht gefunden' })); return; }
+      delete nonSecretConfig.url; delete nonSecretConfig.username;
+      nonSecretConfig.gedcom = gedcomFile(user);
+    }
     writeFileSync(tmpConfig, JSON.stringify(nonSecretConfig), { mode: 0o600, flag: 'wx' });
     const args = [path.join(ROOT, 'src', 'index.js'), tmpConfig, '--out', outputPath, '--lang', config.lang];
     if (still) args.push('--still', still, '--size', '540x960');
@@ -351,7 +384,7 @@ function runGenerator(user, config, onProgress = () => {}, still = null) {
     }
     const child = spawn(process.execPath, args, {
       cwd: ROOT,
-      env: { ...process.env, GRAMPS_PASSWORD: password },
+      env: { ...process.env, ...(config.source === 'gedcom' ? {} : { GRAMPS_PASSWORD: password }) },
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -479,7 +512,7 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { ok: true }, { 'Set-Cookie': 'lebenslinien_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
     }
     if (!user) return json(res, 401, { error: 'Bitte zuerst anmelden.' });
-    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { username: user.username, registrationKeyRequired: Boolean(process.env.APP_REGISTRATION_KEY), config: publicConfig(user), hasVideo: Boolean(user.lastVideo), audioName: user.audioName || null, job: jobState(user) });
+    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { username: user.username, registrationKeyRequired: Boolean(process.env.APP_REGISTRATION_KEY), config: publicConfig(user), hasVideo: Boolean(user.lastVideo), audioName: user.audioName || null, gedcomName: user.gedcomName || null, gedcomPeople: user.gedcomPeople || null, job: jobState(user) });
     if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, publicConfig(user));
     if (req.method === 'POST' && url.pathname === '/api/config') {
       const input = await body(req);
@@ -510,7 +543,7 @@ const server = createServer(async (req, res) => {
       if (!passwordMatches(user, String(input.password || ''))) { rateHit(req, 'account'); return json(res, 403, { error: 'Das aktuelle Passwort stimmt nicht.' }); }
       if (generating.has(user.id) || previewing.has(user.id)) return json(res, 409, { error: 'Gerade wird ein Video oder Vorschaubild erstellt. Bitte danach erneut versuchen.' });
       // Alles löschen, was zu diesem Konto gehört: Video, Musik, Vorschaubild, Einstellungen, Sitzungen
-      for (const file of [user.lastVideo && path.join(VIDEO_DIR, path.basename(user.lastVideo)), user.audioFile && path.join(AUDIO_DIR, path.basename(user.audioFile)), path.join(PREVIEW_DIR, `${user.id}.png`)]) {
+      for (const file of [user.lastVideo && path.join(VIDEO_DIR, path.basename(user.lastVideo)), user.audioFile && path.join(AUDIO_DIR, path.basename(user.audioFile)), path.join(PREVIEW_DIR, `${user.id}.png`), gedcomFile(user)]) {
         if (file) { try { unlinkSync(file); } catch {} }
       }
       users = users.filter((item) => item.id !== user.id);
@@ -521,15 +554,39 @@ const server = createServer(async (req, res) => {
       peopleCache.delete(user.id);
       return json(res, 200, { ok: true }, { 'Set-Cookie': 'lebenslinien_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
     }
+    if (req.method === 'POST' && url.pathname === '/api/gedcom') {
+      const data = await binaryBody(req, 50 * 1024 * 1024, 'GEDCOM-Datei');
+      let name;
+      try { name = decodeURIComponent(String(req.headers['x-file-name'] || 'stammbaum.ged')); } catch { throw new InputError('Ungültiger Dateiname.'); }
+      let tree;
+      try { tree = parseGedcom(decodeGedcom(data)); } catch { throw new InputError('Die Datei enthält keine Personen. Bitte eine GEDCOM-Datei (.ged) hochladen.'); }
+      const temp = path.join(GEDCOM_DIR, `${user.id}.${randomUUID()}.tmp`);
+      writeFileSync(temp, data, { mode: 0o600 });
+      renameSync(temp, gedcomFile(user));
+      user.gedcomName = path.basename(name.replace(/\\/g, '/')).slice(0, 180);
+      user.gedcomPeople = tree.people.size;
+      saveUsers();
+      peopleCache.delete(user.id);
+      return json(res, 200, { gedcomName: user.gedcomName, gedcomPeople: user.gedcomPeople });
+    }
+    if (req.method === 'DELETE' && url.pathname === '/api/gedcom') {
+      if (generating.has(user.id) || previewing.has(user.id)) return json(res, 409, { error: 'Gerade wird ein Video oder Vorschaubild erstellt. Bitte danach erneut versuchen.' });
+      try { unlinkSync(gedcomFile(user)); } catch {}
+      user.gedcomName = null;
+      user.gedcomPeople = null;
+      saveUsers();
+      peopleCache.delete(user.id);
+      return json(res, 200, { gedcomName: null });
+    }
     if (req.method === 'POST' && url.pathname === '/api/gramps/test') {
-      const people = await grampsPeople(user, grampsAccess(await body(req), user));
+      const people = await peopleFor(user, await body(req));
       return json(res, 200, { ok: true, people: people.length });
     }
     if (req.method === 'POST' && url.pathname === '/api/gramps/people') {
       const input = await body(req);
       const words = String(input.q || '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
       if (!words.join('').length) return json(res, 200, { total: 0, people: [] });
-      const people = await grampsPeople(user, grampsAccess(input, user));
+      const people = await peopleFor(user, input);
       const query = words.join(' ');
       // Rang: exakte Gramps-ID zuerst, dann Namen, deren Wörter mit den Suchwörtern beginnen, dann der Rest
       const rank = (person) => {

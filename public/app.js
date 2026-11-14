@@ -78,7 +78,7 @@ function readConfig() {
     };
   }).filter((item) => item.name || item.id || item.start || item.end || item.rel);
   return {
-    url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', mainLabel: configForm.elements.mainLabel.value.trim(),
+    source: data.get('source'), url: data.get('url'), username: data.get('username'), password: data.get('password'), person: data.get('person'), lang: data.get('lang'), anonymous: data.get('names') === 'hide', mainLabel: configForm.elements.mainLabel.value.trim(),
     grandchildren: data.get('grandchildren') !== 'hide', noMusic: configForm.elements.noMusic.checked, seconds: configForm.elements.seconds.value.trim(), extras,
     texts: {
       title: document.querySelector('#ending-title').value,
@@ -96,6 +96,8 @@ function setSuggestedTexts(texts) {
 
 function showConfig(config, defaults) {
   for (const name of ['url', 'username', 'person', 'lang']) if (config[name] != null) configForm.elements[name].value = config[name];
+  configForm.elements.source.value = config.source === 'gedcom' ? 'gedcom' : 'gramps';
+  updateSource();
   configForm.elements.password.value = '';
   configForm.elements.names.value = config.anonymous ? 'hide' : 'show';
   configForm.elements.mainLabel.value = config.mainLabel || '';
@@ -114,7 +116,7 @@ function showConfig(config, defaults) {
   (config.extras || []).forEach(addExtra);
   const ready = Boolean(config.configured);
   document.querySelector('.status-pill').classList.toggle('ready', ready);
-  document.querySelector('#connection-status').textContent = ready ? 'Verbindung eingerichtet' : 'Noch nicht eingerichtet';
+  document.querySelector('#connection-status').textContent = ready ? (config.source === 'gedcom' ? 'Stammbaum aus GEDCOM-Datei' : 'Verbindung eingerichtet') : 'Noch nicht eingerichtet';
   savedSnapshot = JSON.stringify(readConfig());   // Stand der gespeicherten Einstellungen, um Änderungen zu erkennen
 }
 
@@ -212,6 +214,7 @@ async function enter(user) {
   const defaults = await request(`/api/texts?lang=${encodeURIComponent(state.config.lang || 'de')}`);
   showConfig(state.config, defaults);
   showAudio(state.audioName);
+  showGedcom(state.gedcomName, state.gedcomPeople);
   showVideo(state.hasVideo);
   // Läuft noch ein Auftrag (z. B. nach dem Neuladen der Seite) oder das Video eines anderen Kontos, das anzeigen
   const job = state.job || {};
@@ -271,8 +274,52 @@ configForm.elements.lang.addEventListener('change', async () => {
 
 // Zugangsdaten aus dem Formular; ein leeres Passwort heißt: das gespeicherte verwenden
 function grampsFields() {
-  return { url: configForm.elements.url.value.trim(), username: configForm.elements.username.value.trim(), password: configForm.elements.password.value };
+  return { source: configForm.elements.source.value, url: configForm.elements.url.value.trim(), username: configForm.elements.username.value.trim(), password: configForm.elements.password.value };
 }
+
+// Quelle umschalten: Gramps-Felder oder GEDCOM-Upload zeigen; ausgeblendete Felder sind nicht Pflicht
+function updateSource() {
+  const gedcom = configForm.elements.source.value === 'gedcom';
+  for (const element of document.querySelectorAll('.source-gramps')) element.hidden = gedcom;
+  for (const element of document.querySelectorAll('.source-gedcom')) element.hidden = !gedcom;
+  configForm.elements.url.required = !gedcom;
+  configForm.elements.username.required = !gedcom;
+  document.querySelector('#test-button').textContent = gedcom ? 'Datei prüfen' : 'Verbindung testen';
+  document.querySelector('#test-status').textContent = '';
+}
+configForm.elements.source.addEventListener('change', updateSource);
+
+const gedcomInput = document.querySelector('#gedcom-input');
+function showGedcom(name, people) {
+  gedcomInput.value = '';
+  document.querySelector('#gedcom-status').textContent = name
+    ? `Gespeichert: ${name}${people ? ` · ${people} ${people === 1 ? 'Person' : 'Personen'}` : ''}`
+    : 'Export als .ged, z. B. in webtrees unter „Verwaltung → Stammbäume → Exportieren“ · maximal 50 MB';
+  document.querySelector('#gedcom-remove').hidden = !name;
+}
+gedcomInput.addEventListener('change', async () => {
+  const file = gedcomInput.files[0];
+  if (!file) return;
+  const status = document.querySelector('#gedcom-status');
+  gedcomInput.disabled = true;
+  status.textContent = 'Datei wird hochgeladen und gelesen …';
+  try {
+    const response = await fetch('/api/gedcom', { method: 'POST', headers: { 'X-UI-Lang': uiLang, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Upload fehlgeschlagen.');
+    showGedcom(result.gedcomName, result.gedcomPeople);
+  } catch (error) {
+    status.textContent = error.message;
+    gedcomInput.value = '';
+  } finally { gedcomInput.disabled = false; }
+});
+document.querySelector('#gedcom-remove').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try { await request('/api/gedcom', { method: 'DELETE' }); showGedcom(null); }
+  catch (error) { document.querySelector('#gedcom-status').textContent = error.message; }
+  finally { button.disabled = false; }
+});
 
 document.querySelector('#test-button').addEventListener('click', async (event) => {
   const button = event.currentTarget;
@@ -283,7 +330,7 @@ document.querySelector('#test-button').addEventListener('click', async (event) =
   try {
     const result = await request('/api/gramps/test', { method: 'POST', body: JSON.stringify(grampsFields()) });
     status.classList.add('test-ok');
-    status.textContent = `Verbindung steht. ${result.people} ${result.people === 1 ? 'Person' : 'Personen'} im Stammbaum.`;
+    status.textContent = `${configForm.elements.source.value === 'gedcom' ? 'Datei gelesen' : 'Verbindung steht'}. ${result.people} ${result.people === 1 ? 'Person' : 'Personen'} im Stammbaum.`;
   } catch (error) {
     status.classList.add('test-error');
     status.textContent = error.message;
@@ -368,7 +415,7 @@ personInput.addEventListener('input', () => {
   searchTimer = setTimeout(async () => {
     const run = ++searchRun;
     const access = grampsFields();
-    if (!access.url || !access.username) { showResults(null, 'Für die Suche zuerst Server-URL, Benutzername und Passwort eintragen.'); return; }
+    if (access.source !== 'gedcom' && (!access.url || !access.username)) { showResults(null, 'Für die Suche zuerst Server-URL, Benutzername und Passwort eintragen.'); return; }
     if (personResults.hidden) showResults(null, 'Suche in Gramps …');
     try {
       const result = await request('/api/gramps/people', { method: 'POST', body: JSON.stringify({ ...access, q }) });

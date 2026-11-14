@@ -23,8 +23,10 @@ Note: the web interface and its messages are in German. This guide gives the Ger
 
 ## 1. Requirements
 
-**Gramps Web (both ways)**
-- A running Gramps Web instance with REST API and a user account that may **read** the family tree.
+**Family tree (both ways)** – either Gramps Web or a GEDCOM file:
+- **GEDCOM file:** an export as `.ged`, e.g. from webtrees ("Control panel → Family trees → Export"), Gramps, MyHeritage or Ancestry.
+  The file is uploaded in the web interface and stays on your server. Changes to the tree need a new export.
+- **Gramps Web:** a running Gramps Web instance with REST API and a user account that may **read** the family tree.
 - The address must use **HTTPS** and be reachable from the machine running Lebenslinien.
   Plain `http://` is only allowed for `localhost`. An internal Docker address such as `https://172.23.0.5:5000`
   will not work; use the address under which you open Gramps Web in the browser (e.g. behind a reverse proxy).
@@ -163,7 +165,7 @@ The interface should **never** be exposed to the internet unprotected. At least 
 
 1. **Register** (first time): enter a user name (3 to 40 characters), a password (at least 8 characters) and the invitation code.
    This account belongs to Lebenslinien only and has nothing to do with Gramps.
-2. **01 Gramps-Verbindung (Gramps connection):** server URL (HTTPS), Gramps user name and password. **Verbindung testen (test connection)** checks them right away and shows the number of people in the tree. For the **Hauptperson (main person)** type a name:
+2. **01 Stammbaum (family tree):** under **Quelle (source)** choose "Gramps Web" or "GEDCOM-Datei" (GEDCOM file). For a GEDCOM file (e.g. from webtrees) upload it; **Datei prüfen (check file)** shows the number of people. For Gramps Web: server URL (HTTPS), Gramps user name and password. **Verbindung testen (test connection)** checks them right away and shows the number of people in the tree. For the **Hauptperson (main person)** type a name:
    from two letters on, matching people from Gramps appear with birth and death year, and choosing one enters the unique Gramps ID (e.g. `I0044`). Then the **Sprache (language)** (Deutsch, English, Türkçe,
    Bosanski) and whether names are shown. With "Ohne Namen" (without names) only the relationship appears in the picture
    ("Me", "Wife", "Son" …), and neither the opening title nor the file name contains a name. In the field **Bezeichnung der Hauptperson (label of the main person)** you set what the main person is called then (e.g. "Grandpa" or "Mom"); empty means "Me".

@@ -7,7 +7,7 @@
 [![Docker-Image](https://img.shields.io/badge/ghcr.io-edgarm73%2Flebenslinien-blue?logo=docker)](https://github.com/EdgarM73/LebensLinien/pkgs/container/lebenslinien)
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-green)](LICENSE)
 
-Erzeugt aus einer Person in **Gramps Web** ein Hochformat-Video (1080×1920): Jede Person aus der
+Erzeugt aus einer Person in **Gramps Web** oder einer **GEDCOM-Datei** (z. B. aus webtrees) ein Hochformat-Video (1080×1920): Jede Person aus der
 engeren Familie ist ein leuchtender Faden. Neue Menschen schwingen in dein Leben (Geburt, Hochzeit),
 Verstorbene steigen als Sterne auf, am Ende verbindet sich alles zu einem Sternbild.
 
@@ -18,7 +18,7 @@ Idee: [@SecretFire79](https://x.com/SecretFire79)
 
 ## Funktionen
 
-- **Familie aus Gramps Web:** Großeltern, Eltern, Geschwister, Partner, Kinder, Enkel und deren Ehepartner, gelesen über die REST-API (Leserechte genügen).
+- **Familie aus Gramps Web oder GEDCOM:** Großeltern, Eltern, Geschwister, Partner, Kinder, Enkel und deren Ehepartner – live über die REST-API von Gramps Web (Leserechte genügen) oder aus einer GEDCOM-Datei, wie sie webtrees, Gramps, MyHeritage, Ancestry und andere exportieren.
 - **Freunde, Kollegen und andere Wegbegleiter** lassen sich von Hand ergänzen.
 - **Lebendige Darstellung:** Neugeborene entstehen an ihrem Platz, Paare und Familien stehen beieinander, eine Scheidung lässt die Linie wegdriften, Verstorbene werden zu Sternen.
 - **Weboberfläche** mit Konten, Verbindungstest, Personensuche, Vorschaubild, Fortschrittsanzeige und Hintergrundmusik – oder die **Kommandozeile**.
@@ -56,7 +56,7 @@ volumes:
   lebenslinien_data:
 ```
 
-Danach `http://127.0.0.1:3000` öffnen, mit dem Einladungscode ein Konto anlegen und die Gramps-Verbindung eintragen.
+Danach `http://127.0.0.1:3000` öffnen, mit dem Einladungscode ein Konto anlegen und die Gramps-Verbindung eintragen oder eine GEDCOM-Datei hochladen.
 Statt `latest` lässt sich eine feste Version angeben, z. B. `:2026.11.01`. Selbst bauen geht mit `docker compose up --build -d`.
 
 Alles Weitere – Einstellungen, Betrieb hinter einem Reverse Proxy, lokaler Start ohne Docker und Fehlerhilfe – steht in der
@@ -64,7 +64,7 @@ Alles Weitere – Einstellungen, Betrieb hinter einem Reverse Proxy, lokaler Sta
 
 ## Weboberfläche
 
-Pro Konto werden die Gramps-Verbindung, die Hauptperson, Zusatzpersonen, Schlusstext und Hintergrundmusik gespeichert.
+Pro Konto werden die Quelle (Gramps-Verbindung oder GEDCOM-Datei), die Hauptperson, Zusatzpersonen, Schlusstext und Hintergrundmusik gespeichert.
 
 - **Verbindung testen** prüft Adresse und Zugangsdaten sofort; die **Personensuche** findet die Hauptperson per Name.
 - **Vorschaubild** von Mitte oder Schluss in wenigen Sekunden, bevor das ganze Video entsteht.
@@ -95,6 +95,14 @@ Pro Hauptperson gibt es eine eigene Konfigurationsdatei `config_<name>.json` (z.
 
 ```bash
 node src/index.js config_opa.json
+```
+
+**Ohne Gramps Web, mit einer GEDCOM-Datei** (z. B. Export aus webtrees unter „Verwaltung → Stammbäume → Exportieren“):
+statt `url` und `username` den Pfad zur Datei angeben, relativ zur Konfigurationsdatei. `person` ist dann die ID aus der Datei
+(z. B. `I24`) oder ein Name.
+
+```json
+{ "gedcom": "familie.ged", "person": "I24", "lang": "de" }
 ```
 
 Das Video heißt wie die Person, z. B. `Max Mustermann.mp4` (änderbar mit `--out` oder `"out"` in der Konfiguration).

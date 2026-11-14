@@ -7,7 +7,7 @@
 [![Docker image](https://img.shields.io/badge/ghcr.io-edgarm73%2Flebenslinien-blue?logo=docker)](https://github.com/EdgarM73/LebensLinien/pkgs/container/lebenslinien)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-Turns one person from **Gramps Web** into a portrait video (1080×1920): every close family member is a glowing thread.
+Turns one person from **Gramps Web** or a **GEDCOM file** (e.g. from webtrees) into a portrait video (1080×1920): every close family member is a glowing thread.
 New people swing into your life (births, marriages), people who have died rise as stars, and in the end everything
 joins into a constellation.
 
@@ -18,7 +18,7 @@ Idea: [@SecretFire79](https://x.com/SecretFire79)
 
 ## Features
 
-- **Family from Gramps Web:** grandparents, parents, siblings, partners, children, grandchildren and their spouses, read through the REST API (read access is enough).
+- **Family from Gramps Web or GEDCOM:** grandparents, parents, siblings, partners, children, grandchildren and their spouses – live through the Gramps Web REST API (read access is enough) or from a GEDCOM file as exported by webtrees, Gramps, MyHeritage, Ancestry and others.
 - **Friends, colleagues and other companions** can be added by hand.
 - **Living picture:** newborns appear in their place, couples and families stand together, a divorce makes the line drift away, people who have died become stars.
 - **Web interface** with accounts, connection test, person search, preview image, progress bar and background music – or the **command line**.
@@ -56,7 +56,7 @@ volumes:
   lebenslinien_data:
 ```
 
-Then open `http://127.0.0.1:3000`, create an account with the invitation code and enter your Gramps connection.
+Then open `http://127.0.0.1:3000`, create an account with the invitation code and enter your Gramps connection or upload a GEDCOM file.
 Instead of `latest` you can pin a version, e.g. `:2026.11.01`. To build it yourself use `docker compose up --build -d`.
 
 Everything else – settings, running behind a reverse proxy, starting locally without Docker and troubleshooting – is in the
@@ -64,7 +64,7 @@ Everything else – settings, running behind a reverse proxy, starting locally w
 
 ## Web interface
 
-For each account it stores the Gramps connection, the main person, additional people, the closing text and background music.
+For each account it stores the source (Gramps connection or GEDCOM file), the main person, additional people, the closing text and background music.
 
 - **Test connection** checks the address and credentials right away; the **person search** finds the main person by name.
 - **Preview image** of the middle or the ending within seconds, before the whole video is created.
@@ -95,6 +95,14 @@ Each main person has their own configuration file `config_<name>.json` (e.g. `co
 
 ```bash
 node src/index.js config_grandpa.json
+```
+
+**Without Gramps Web, from a GEDCOM file** (e.g. exported from webtrees under "Control panel → Family trees → Export"):
+give the path to the file instead of `url` and `username`, relative to the configuration file. `person` is then the ID from the file
+(e.g. `I24`) or a name.
+
+```json
+{ "gedcom": "family.ged", "person": "I24", "lang": "en" }
 ```
 
 The video is named after the person, e.g. `Max Mustermann.mp4` (change it with `--out` or `"out"` in the configuration).

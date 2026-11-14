@@ -75,11 +75,13 @@
       <div class="workspace-grid">
         <form class="setup-form" id="config-form">
           <section class="form-section">
-            <div class="section-heading"><span class="step-number">01</span><div><h2>Gramps-Verbindung</h2><p>Deine Zugangsdaten werden verschlüsselt gespeichert.</p></div></div>
+            <div class="section-heading"><span class="step-number">01</span><div><h2>Stammbaum</h2><p>Aus Gramps Web oder aus einer GEDCOM-Datei. Zugangsdaten und Dateien werden nur auf diesem Server gespeichert.</p></div></div>
             <div class="field-grid">
-              <label class="field-wide">Server-URL<input name="url" type="url" placeholder="https://gramps.example.org" required></label>
-              <label>Benutzername<input name="username" autocomplete="username" required></label>
-              <label>Passwort<input name="password" type="password" autocomplete="new-password" placeholder="Passwort eingeben"><small id="password-hint">Wird verschlüsselt gespeichert.</small></label>
+              <label class="field-wide">Quelle<select name="source"><option value="gramps">Gramps Web (Verbindung)</option><option value="gedcom">GEDCOM-Datei (z. B. aus webtrees, Gramps, MyHeritage, Ancestry)</option></select></label>
+              <label class="field-wide source-gramps">Server-URL<input name="url" type="url" placeholder="https://gramps.example.org" required></label>
+              <label class="source-gramps">Benutzername<input name="username" autocomplete="username" required></label>
+              <label class="source-gramps">Passwort<input name="password" type="password" autocomplete="new-password" placeholder="Passwort eingeben"><small id="password-hint">Wird verschlüsselt gespeichert.</small></label>
+              <div class="field-wide audio-upload source-gedcom" hidden><label for="gedcom-input">GEDCOM-Datei</label><div class="audio-control"><input id="gedcom-input" type="file" accept=".ged,.gedcom,text/plain"><button class="button-audio-remove" id="gedcom-remove" type="button" hidden>Entfernen</button></div><small id="gedcom-status" role="status">Export als .ged, z. B. in webtrees unter „Verwaltung → Stammbäume → Exportieren“ · maximal 50 MB</small></div>
               <div class="field-wide connection-test"><button class="button button-secondary" id="test-button" type="button">Verbindung testen</button><span class="test-status" id="test-status" role="status" aria-live="polite"></span></div>
               <div class="field-wide person-search">
                 <label for="person-input">Hauptperson</label>

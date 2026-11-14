@@ -21,8 +21,10 @@ Für Skripte und Einzelvideos ohne Weboberfläche gibt es außerdem die Kommando
 
 ## 1. Voraussetzungen
 
-**Gramps Web (für beide Wege)**
-- Eine laufende Gramps-Web-Instanz mit REST-API und ein Benutzerkonto, das den Stammbaum **lesen** darf.
+**Stammbaum (für beide Wege)** – entweder Gramps Web oder eine GEDCOM-Datei:
+- **GEDCOM-Datei:** ein Export als `.ged`, z. B. aus webtrees („Verwaltung → Stammbäume → Exportieren“), Gramps, MyHeritage oder Ancestry.
+  Die Datei wird in der Weboberfläche hochgeladen und bleibt auf deinem Server. Änderungen am Stammbaum brauchen einen neuen Export.
+- **Gramps Web:** eine laufende Gramps-Web-Instanz mit REST-API und ein Benutzerkonto, das den Stammbaum **lesen** darf.
 - Die Adresse muss **HTTPS** verwenden und vom Rechner, auf dem Lebenslinien läuft, erreichbar sein.
   Reines `http://` ist nur für `localhost` erlaubt. Eine interne Docker-Adresse wie `https://172.23.0.5:5000`
   funktioniert nicht, nutze die Adresse, unter der du Gramps Web im Browser öffnest (z. B. hinter einem Reverse Proxy).
@@ -161,7 +163,7 @@ Die Oberfläche sollte **nie ungeschützt** ins Internet. Mindestens nötig:
 
 1. **Registrieren** (beim ersten Mal): Benutzername (3 bis 40 Zeichen), Passwort (mindestens 8 Zeichen) und den Einladungscode eingeben.
    Dieses Konto gehört nur zu Lebenslinien und hat nichts mit Gramps zu tun.
-2. **01 Gramps-Verbindung:** Server-URL (HTTPS), Gramps-Benutzername und -Passwort. **Verbindung testen** prüft die Angaben sofort und nennt die Zahl der Personen im Stammbaum. Bei der **Hauptperson** einen Namen eintippen:
+2. **01 Stammbaum:** Unter **Quelle** „Gramps Web“ oder „GEDCOM-Datei“ wählen. Für eine GEDCOM-Datei (z. B. aus webtrees) die Datei hochladen; **Datei prüfen** nennt die Zahl der Personen. Für Gramps Web: Server-URL (HTTPS), Gramps-Benutzername und -Passwort. **Verbindung testen** prüft die Angaben sofort und nennt die Zahl der Personen im Stammbaum. Bei der **Hauptperson** einen Namen eintippen:
    ab zwei Buchstaben erscheinen passende Personen aus Gramps mit Geburts- und Sterbejahr, die Auswahl trägt die eindeutige Gramps-ID ein (z. B. `I0044`). Dazu die **Sprache** (Deutsch, English, Türkçe, Bosanski) und ob die Namen angezeigt werden. Bei „Ohne Namen“ steht nur die Beziehung im Bild („Ich“, „Ehefrau“, „Sohn“ …), auch der Titel am Anfang und der Dateiname enthalten dann keinen Namen. Im Feld **Bezeichnung der Hauptperson** legst du fest, wie die Hauptperson dann heißt (z. B. „Opa“ oder „Mama“); leer bedeutet „Ich“.
    Eigene **Hintergrundmusik** hochladen (MP3, WAV, M4A, AAC, OGG oder FLAC, höchstens 50 MB) oder **Ohne Musik** ankreuzen. Ohne eigene Datei läuft die Standardmusik „Journey of Life“; sie wird wiederholt, wenn das Video länger ist.
 3. **02 Weitere Menschen:** Freunde, Kollegen und andere Nicht-Verwandte hinzufügen:

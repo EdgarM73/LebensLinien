@@ -2,7 +2,9 @@
 // Lebenslinien: Video aus einer Person in Gramps Web.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+import path from 'node:path';
 import { loadTree } from './gramps.js';
+import { loadGedcom } from './gedcom.js';
 import { buildModel, makeExtra } from './timeline.js';
 import { render } from './render.js';
 import { demoModel } from './demo.js';
@@ -38,7 +40,7 @@ const { values: a, positionals } = parseArgs({
 
 if (a.help) {
   console.log(`Aufruf: node src/index.js config_opa.json [--out video.mp4]
-  Pro Hauptperson eine eigene Datei config_<name>.json (url, username, person, extras …, siehe config.example.json).
+  Pro Hauptperson eine eigene Datei config_<name>.json (url + username oder gedcom, person, extras …, siehe config.example.json).
   Das Video heißt standardmäßig wie die Person: "Vorname Nachname.mp4".
   --demo               Beispieldaten statt Gramps Web
   --still 30           nur ein Standbild (PNG) bei Sekunde 30 erzeugen (auch: --still middle | end)
@@ -60,10 +62,19 @@ let model;
 if (a.demo) model = structuredClone(demoModel);
 else if (a.model) model = JSON.parse(readFileSync(a.model, 'utf8'));
 else {
-  if (!cfg.url) { console.error(`In ${cfgFile} fehlt "url" (siehe config.example.json).`); process.exit(1); }
+  if (!cfg.url && !cfg.gedcom) { console.error(`In ${cfgFile} fehlt die Quelle: "url" (Gramps Web) oder "gedcom" (Datei, z. B. aus webtrees), siehe config.example.json.`); process.exit(1); }
   if (!personQuery) { console.error(`In ${cfgFile} fehlt "person" (Gramps-ID oder Name).`); process.exit(1); }
-  console.log('Lade Stammbaum aus Gramps Web …');
-  const tree = await loadTree(cfg);
+  let tree;
+  if (cfg.gedcom) {
+    // Relativer Pfad gilt ab dem Ordner der Konfigurationsdatei
+    const gedcomFile = path.resolve(path.dirname(path.resolve(cfgFile)), cfg.gedcom);
+    if (!existsSync(gedcomFile)) { console.error('GEDCOM-Datei nicht gefunden: ' + gedcomFile); process.exit(1); }
+    console.log('Lade Stammbaum aus GEDCOM-Datei …');
+    tree = loadGedcom(gedcomFile);
+  } else {
+    console.log('Lade Stammbaum aus Gramps Web …');
+    tree = await loadTree(cfg);
+  }
   const q = personQuery.toLowerCase();
   const hits = [...tree.people.values()].filter((p) => p.gramps_id?.toLowerCase() === q ||
     [p.primary_name?.first_name, p.primary_name?.surname_list?.[0]?.surname].filter(Boolean).join(' ').toLowerCase().includes(q));
