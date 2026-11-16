@@ -2,6 +2,54 @@
 
 **Deutsch** · [English](RELEASE_NOTES.en.md)
 
+## Version 2026.11.03
+
+Veröffentlicht am 16. November 2026. Lebenslinien braucht nicht mehr zwingend Gramps Web: Der Stammbaum kann jetzt auch aus einer
+**GEDCOM-Datei** kommen, etwa aus webtrees, Gramps, MyHeritage oder Ancestry.
+
+### Highlights
+
+- **GEDCOM als Quelle:** in der Weboberfläche eine `.ged`-Datei hochladen, auf der Kommandozeile `"gedcom": "familie.ged"` angeben.
+- **Für webtrees-Nutzer:** Export unter „Verwaltung → Stammbäume → Exportieren“, hochladen, fertig.
+
+### Weboberfläche
+
+- Abschnitt 01 heißt jetzt „Stammbaum“ und bietet die **Quelle** „Gramps Web“ oder „GEDCOM-Datei“.
+- GEDCOM-Datei hochladen (bis 50 MB); **Datei prüfen** nennt die Zahl der Personen, die **Personensuche** funktioniert wie bei Gramps Web.
+- Speichern ohne Gramps-Zugangsdaten; ein gespeicherter Gramps-Zugang bleibt für einen späteren Wechsel erhalten.
+- Die Datei bleibt auf dem eigenen Server und wird beim Löschen des Kontos mit entfernt.
+
+### Was aus der Datei gelesen wird
+
+- Namen (`NAME`, `GIVN`/`SURN`), Geschlecht, Geburt oder ersatzweise Taufe, Tod oder ersatzweise Beerdigung.
+- Eltern und Kinder, Heirat (auch ohne Datum) und Scheidung.
+- Ungenaue Datumsangaben wie „ABT 1950“, „BET 1900 AND 1910“, „FROM … TO …“ und julianische Daten.
+- Zeichensätze UTF-8, UTF-16 und ältere ANSI-Exporte mit Umlauten.
+
+### Kommandozeile
+
+```json
+{ "gedcom": "familie.ged", "person": "I24", "lang": "de" }
+```
+
+Der Pfad gilt relativ zur Konfigurationsdatei. `person` ist die ID aus der Datei (z. B. `I24`) oder ein Name.
+
+### Docker
+
+```bash
+docker pull ghcr.io/edgarm73/lebenslinien:2026.11.03
+```
+
+### Hinweise zum Update
+
+- Die IDs aus einer GEDCOM-Datei können anders aussehen als in Gramps Web (z. B. `I24` statt `I0024`).
+- Eine GEDCOM-Datei ist ein Schnappschuss: Änderungen am Stammbaum brauchen einen neuen Export und Upload.
+- Getestet mit einem eigenen Teststammbaum und künstlichen ANSI-Dateien, noch nicht mit echten Exporten aus webtrees, MyHeritage oder Ancestry. Rückmeldungen dazu sind willkommen.
+
+**Alle Änderungen:** [v2026.11.02…v2026.11.03](https://github.com/EdgarM73/LebensLinien/compare/v2026.11.02...v2026.11.03)
+
+---
+
 ## Version 2026.11.02
 
 Veröffentlicht am 13. November 2026. Videos haben jetzt von Haus aus Musik, und das fertige Docker-Image entsteht automatisch mit jedem Release.

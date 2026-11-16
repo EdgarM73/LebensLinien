@@ -2,6 +2,54 @@
 
 [Deutsch](RELEASE_NOTES.md) · **English**
 
+## Version 2026.11.03
+
+Released on 16 November 2026. Lebenslinien no longer requires Gramps Web: the family tree can now also come from a
+**GEDCOM file**, e.g. from webtrees, Gramps, MyHeritage or Ancestry.
+
+### Highlights
+
+- **GEDCOM as a source:** upload a `.ged` file in the web interface, or set `"gedcom": "family.ged"` on the command line.
+- **For webtrees users:** export under "Control panel → Family trees → Export", upload, done.
+
+### Web interface
+
+- Section 01 is now called "Stammbaum" (family tree) and offers the **source** "Gramps Web" or "GEDCOM file".
+- Upload a GEDCOM file (up to 50 MB); **check file** shows the number of people, and the **person search** works as with Gramps Web.
+- Save without Gramps credentials; a stored Gramps connection is kept in case you switch back later.
+- The file stays on your own server and is removed together with the account.
+
+### What is read from the file
+
+- Names (`NAME`, `GIVN`/`SURN`), sex, birth or else baptism, death or else burial.
+- Parents and children, marriage (also without a date) and divorce.
+- Inexact dates such as "ABT 1950", "BET 1900 AND 1910", "FROM … TO …" and Julian dates.
+- Character sets UTF-8, UTF-16 and older ANSI exports with umlauts.
+
+### Command line
+
+```json
+{ "gedcom": "family.ged", "person": "I24", "lang": "en" }
+```
+
+The path is relative to the configuration file. `person` is the ID from the file (e.g. `I24`) or a name.
+
+### Docker
+
+```bash
+docker pull ghcr.io/edgarm73/lebenslinien:2026.11.03
+```
+
+### Upgrade notes
+
+- IDs from a GEDCOM file may look different from Gramps Web (e.g. `I24` instead of `I0024`).
+- A GEDCOM file is a snapshot: changes to the tree need a new export and upload.
+- Tested with our own test tree and synthetic ANSI files, not yet with real exports from webtrees, MyHeritage or Ancestry. Feedback is welcome.
+
+**All changes:** [v2026.11.02…v2026.11.03](https://github.com/EdgarM73/LebensLinien/compare/v2026.11.02...v2026.11.03)
+
+---
+
 ## Version 2026.11.02
 
 Released on 13 November 2026. Videos now come with music out of the box, and the ready-made Docker image is built automatically with every release.
